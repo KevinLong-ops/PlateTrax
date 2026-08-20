@@ -1,6 +1,6 @@
 {
-  "name": "Platelog",
-  "short_name": "Platelog",
+  "name": "PlateTrax",
+  "short_name": "PlateTrax",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#100c0c",

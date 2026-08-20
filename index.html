@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Platelog</title>
+<title>PlateTrax</title>
 <meta name="theme-color" content="#100c0c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Platelog">
+<meta name="apple-mobile-web-app-title" content="PlateTrax">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23d1232b'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23100c0c' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='23' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='77' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='23' cy='50' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='77' cy='50' r='3.2' fill='%23100c0c'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23d1232b'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23100c0c' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='23' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='77' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='23' cy='50' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='77' cy='50' r='3.2' fill='%23100c0c'/%3E%3C/svg%3E">
@@ -62,6 +62,16 @@
 
   h1 {
     text-shadow: 0 0 18px rgba(209,35,43,0.55), 0 0 3px rgba(242,49,56,0.5);
+  }
+
+  .t-emphasis {
+    display: inline-block;
+    font-size: 1.4em;
+    font-weight: 900;
+    color: var(--chalk);
+    -webkit-text-stroke: 1px var(--rust-bright);
+    text-shadow: 3px 3px 0 var(--ink), 0 0 24px rgba(242,49,56,0.9);
+    transform: translateY(-0.05em) scale(1.05);
   }
 
   button, input, select { font-size: 16px; }
@@ -1303,14 +1313,14 @@
   <div class="app">
     <header class="site-header">
       <button id="header-back-btn" class="header-back hidden" type="button" aria-label="Back to menu">&#8249;</button>
-      <h1>Platelog</h1>
+      <h1>Plate<span class="t-emphasis">T</span>rax</h1>
     </header>
 
     <main class="views">
       <!-- MENU / HOME VIEW -->
       <section id="view-menu" class="view active">
         <div class="menu-hero">
-          <h1>Platelog</h1>
+          <h1>Plate<span class="t-emphasis">T</span>rax</h1>
           <p class="tagline">Track it. Lift it. Beat it.</p>
           <p class="menu-stat" id="menu-stat"></p>
           <p class="menu-stat menu-stat-week" id="menu-stat-week"></p>
