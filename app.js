@@ -16,6 +16,120 @@
   var SUPABASE_URL = 'https://feqgozzxbjaoctwemmxp.supabase.co';
   var SUPABASE_ANON_KEY = 'sb_publishable_QfHJbnEJANsrT3RkrkeLTA_YHg2VRej';
 
+  // ---------- exercise library ----------
+  // Built-in catalog of common exercises for autocomplete + form-tip lookups.
+  // Separate from state.sets history so it works before you've ever logged
+  // anything, and doesn't pollute exercise lists derived from real log data.
+  var EXERCISE_LIBRARY = [
+    // Chest
+    { name: 'Barbell Bench Press', tip: 'Retract your shoulder blades and keep feet planted. Lower the bar to mid-chest with control, then press up in a slight arc back over your shoulders.' },
+    { name: 'Incline Barbell Bench Press', tip: 'Set the bench to 30-45 degrees. Lower the bar to your upper chest, keeping elbows at roughly a 45-degree angle from your torso.' },
+    { name: 'Decline Bench Press', tip: 'Secure your legs, lower the bar to your lower chest, and press up and slightly back. Keep the movement controlled, not bounced.' },
+    { name: 'Dumbbell Bench Press', tip: 'Keep dumbbells over your elbows throughout. Lower until upper arms are roughly parallel to the floor, then press up without locking out violently.' },
+    { name: 'Incline Dumbbell Press', tip: 'Set bench to 30-45 degrees. Press dumbbells up and slightly inward, stopping just short of the dumbbells touching at the top.' },
+    { name: 'Dumbbell Fly', tip: 'Keep a slight bend in your elbows throughout. Lower the weights in a wide arc until you feel a stretch in your chest, then bring them back together.' },
+    { name: 'Cable Fly', tip: 'Set cables at chest height, step forward, and bring your hands together in a hugging motion, squeezing your chest at the center.' },
+    { name: 'Pec Deck', tip: 'Sit tall with back against the pad. Bring the handles together in a controlled arc, squeezing your chest without shrugging your shoulders.' },
+    { name: 'Push-Up', tip: 'Keep your body in a straight line from head to heels. Lower until your chest nearly touches the floor, then press back up.' },
+    { name: 'Incline Push-Up', tip: 'Hands on an elevated surface, body straight. Lower your chest to the surface and press back up — easier than a standard push-up.' },
+    { name: 'Chest Dip', tip: 'Lean your torso forward and let your elbows flare slightly to bias the chest. Lower until you feel a stretch, then press back up.' },
+    { name: 'Machine Chest Press', tip: 'Adjust the seat so handles align with mid-chest. Press forward without locking elbows out hard, then return with control.' },
+
+    // Back
+    { name: 'Deadlift', tip: 'Keep the bar close to your shins, chest up, and back flat. Drive through your heels and stand tall by extending hips and knees together.' },
+    { name: 'Sumo Deadlift', tip: 'Take a wide stance with toes pointed out, grip inside your knees. Push your knees out as you pull, keeping the bar close to your body.' },
+    { name: 'Romanian Deadlift', tip: 'Keep knees softly bent and back flat. Push your hips back as you lower the bar along your legs, feeling a hamstring stretch, then drive hips forward to stand.' },
+    { name: 'Barbell Row', tip: 'Hinge at the hips with a flat back. Pull the bar to your lower ribcage, squeezing your shoulder blades together at the top.' },
+    { name: 'Pendlay Row', tip: 'Start each rep from a dead stop on the floor. Explosively pull the bar to your lower chest while keeping your torso close to parallel with the ground.' },
+    { name: 'Dumbbell Row', tip: 'Support yourself on a bench with one hand and knee. Pull the dumbbell up to your hip, keeping your elbow close to your body.' },
+    { name: 'T-Bar Row', tip: 'Hinge forward with a flat back. Pull the handle to your torso, squeezing your back at the top, then lower under control.' },
+    { name: 'Seated Cable Row', tip: 'Sit tall, don’t round your lower back. Pull the handle to your torso while keeping your elbows close, then let your arms extend fully at the stretch.' },
+    { name: 'Lat Pulldown', tip: 'Pull the bar down to your upper chest by driving your elbows down and back, avoiding leaning back excessively.' },
+    { name: 'Pull-Up', tip: 'Start from a dead hang. Pull your chin over the bar by driving your elbows down, keeping your core braced to avoid swinging.' },
+    { name: 'Chin-Up', tip: 'Underhand grip, shoulder-width. Pull your chest toward the bar, leading with your chest rather than your chin.' },
+    { name: 'Assisted Pull-Up', tip: 'Use a machine or band for support. Focus on full range of motion — dead hang to chin over the bar — rather than speed.' },
+    { name: 'Straight-Arm Pulldown', tip: 'Keep arms nearly straight throughout. Pull the bar down in an arc to your thighs, feeling your lats do the work rather than your triceps.' },
+    { name: 'Face Pull', tip: 'Pull the rope toward your face, flaring your elbows out wide and squeezing your rear delts and upper back at the end.' },
+
+    // Legs
+    { name: 'Back Squat', tip: 'Bar on your upper back, feet shoulder-width. Break at the hips and knees together, keep your chest up, and go to at least parallel depth.' },
+    { name: 'Front Squat', tip: 'Bar rests on your front shoulders, elbows high. Keep your torso upright as you squat to avoid dumping the bar forward.' },
+    { name: 'Goblet Squat', tip: 'Hold a dumbbell or kettlebell at your chest. Squat down keeping your elbows inside your knees and your torso upright.' },
+    { name: 'Bulgarian Split Squat', tip: 'Rear foot elevated on a bench. Lower straight down until your front thigh is roughly parallel to the floor, keeping most of your weight on the front leg.' },
+    { name: 'Leg Press', tip: 'Feet shoulder-width on the platform. Lower until your knees reach about 90 degrees, avoiding letting your lower back round off the pad.' },
+    { name: 'Hack Squat', tip: 'Back flat against the pad, feet slightly forward. Lower under control and drive through your whole foot to stand.' },
+    { name: 'Walking Lunge', tip: 'Step forward and lower your back knee toward the floor, keeping your front knee tracking over your foot, then push off into the next step.' },
+    { name: 'Reverse Lunge', tip: 'Step backward and lower your back knee toward the floor. Easier on the knees than a forward lunge — drive through your front heel to return.' },
+    { name: 'Step-Up', tip: 'Drive through the heel of the foot on the box to stand up, avoiding pushing off your back leg to cheat the movement.' },
+    { name: 'Leg Extension', tip: 'Sit with knees aligned to the machine’s pivot. Extend your legs fully, squeeze your quads, then lower with control.' },
+    { name: 'Leg Curl (Lying)', tip: 'Curl the pad toward your glutes, squeezing your hamstrings at the top, then lower slowly without letting the weight drop.' },
+    { name: 'Leg Curl (Seated)', tip: 'Keep your back against the pad. Curl your heels down and back, squeezing your hamstrings, then return with control.' },
+    { name: 'Calf Raise (Standing)', tip: 'Rise onto your toes as high as possible, pause, then lower until you feel a deep stretch in your calves.' },
+    { name: 'Calf Raise (Seated)', tip: 'Targets the soleus. Rise onto your toes, pause at the top, and lower with a full stretch at the bottom.' },
+    { name: 'Hip Thrust', tip: 'Upper back on a bench, bar over your hips. Drive through your heels to raise your hips until your body forms a straight line, squeezing your glutes hard.' },
+    { name: 'Glute Bridge', tip: 'Lying on the floor, drive through your heels to raise your hips, squeezing your glutes at the top before lowering.' },
+    { name: 'Cable Kickback', tip: 'Hinge slightly forward. Kick your leg straight back, squeezing your glute at the top without arching your lower back.' },
+    { name: 'Good Morning', tip: 'Bar on your back, soft knees. Hinge at the hips keeping your back flat until you feel a hamstring stretch, then stand back up.' },
+
+    // Shoulders
+    { name: 'Overhead Press', tip: 'Brace your core and keep the bar path straight up. Press overhead without excessively arching your lower back.' },
+    { name: 'Seated Dumbbell Shoulder Press', tip: 'Back supported, press the dumbbells straight overhead without letting them drift too far forward.' },
+    { name: 'Arnold Press', tip: 'Start with palms facing you, and rotate your wrists outward as you press overhead, finishing with palms facing forward.' },
+    { name: 'Lateral Raise', tip: 'Raise dumbbells out to your sides to about shoulder height, leading with your elbows and keeping a slight bend in your arms.' },
+    { name: 'Front Raise', tip: 'Raise the weight in front of you to shoulder height, keeping your torso still and avoiding swinging momentum.' },
+    { name: 'Rear Delt Fly', tip: 'Hinge forward, raise the weights out to your sides in a reverse fly motion, squeezing your rear delts and upper back.' },
+    { name: 'Upright Row', tip: 'Pull the bar up along your body to about chest height, leading with your elbows, keeping the bar close to your torso.' },
+    { name: 'Cable Lateral Raise', tip: 'Cable at the lowest setting, arm across your body. Raise out and up to shoulder height for constant tension throughout.' },
+    { name: 'Machine Shoulder Press', tip: 'Adjust the seat so handles start at shoulder height. Press up without shrugging, then lower under control.' },
+    { name: 'Shrug', tip: 'Hold weight at your sides and shrug straight up toward your ears, avoiding rolling your shoulders.' },
+
+    // Arms
+    { name: 'Barbell Curl', tip: 'Keep your elbows pinned to your sides. Curl the bar up without swinging your torso, then lower with control.' },
+    { name: 'Dumbbell Curl', tip: 'Curl one or both dumbbells up, rotating your palm to face up as you go, keeping elbows stationary at your sides.' },
+    { name: 'Hammer Curl', tip: 'Palms face each other throughout the movement. Curl up keeping your elbows fixed, targeting your biceps and forearms.' },
+    { name: 'Preacher Curl', tip: 'Rest your upper arms on the pad. Curl up without letting your elbows lift off, and control the lowering fully.' },
+    { name: 'Cable Curl', tip: 'Keep constant tension by not letting the weight stack rest between reps. Curl up with elbows fixed at your sides.' },
+    { name: 'Concentration Curl', tip: 'Elbow braced against your inner thigh. Curl up slowly, focusing on squeezing the bicep at the top.' },
+    { name: 'Tricep Pushdown', tip: 'Elbows pinned to your sides. Push the bar or rope down until your arms are fully extended, then let it return under control.' },
+    { name: 'Overhead Tricep Extension', tip: 'Elbows pointed forward and stationary. Lower the weight behind your head, then extend back up without flaring your elbows out.' },
+    { name: 'Skull Crusher', tip: 'Lying down, lower the bar toward your forehead by bending only at the elbow, then extend back up.' },
+    { name: 'Close-Grip Bench Press', tip: 'Hands just inside shoulder-width. Keep elbows tucked close to your body as you lower and press, targeting the triceps.' },
+    { name: 'Dip', tip: 'Keep your torso more upright to bias triceps over chest. Lower until your upper arms are roughly parallel to the floor, then press up.' },
+    { name: 'Tricep Kickback', tip: 'Hinge forward, upper arm parallel to the floor. Extend your forearm straight back, squeezing your tricep at the top.' },
+
+    // Core
+    { name: 'Plank', tip: 'Keep a straight line from head to heels. Brace your core and squeeze your glutes to avoid letting your hips sag.' },
+    { name: 'Side Plank', tip: 'Stack your feet and keep your hips lifted so your body forms a straight line. Avoid letting your hips drop.' },
+    { name: 'Hanging Leg Raise', tip: 'Hang from a bar and raise your legs by curling your pelvis up, avoiding swinging momentum.' },
+    { name: 'Cable Crunch', tip: 'Kneel below the cable, crunch down by rounding your spine and bringing your elbows toward your hips, not just bending forward.' },
+    { name: 'Sit-Up', tip: 'Anchor your feet if needed. Curl your torso all the way up toward your knees, then lower with control.' },
+    { name: 'Russian Twist', tip: 'Lean back slightly with feet off the floor if possible. Rotate your torso side to side, keeping your core braced.' },
+    { name: 'Ab Wheel Rollout', tip: 'Keep your core braced and back flat as you roll forward, going only as far as you can control, then pull back to start.' },
+    { name: 'Bicycle Crunch', tip: 'Alternate bringing elbow to opposite knee in a controlled pedaling motion, keeping your lower back pressed to the floor.' },
+    { name: 'Mountain Climber', tip: 'In a plank position, drive your knees toward your chest alternately at a quick pace while keeping your hips level.' },
+    { name: 'Weighted Crunch', tip: 'Hold weight at your chest. Crunch up by curling your spine, focusing on squeezing your abs rather than pulling with your neck.' },
+
+    // Olympic / functional
+    { name: 'Power Clean', tip: 'Pull the bar close to your body, extend explosively through your hips, then drop under it to catch on your front shoulders.' },
+    { name: 'Clean and Jerk', tip: 'Clean the bar to your shoulders, then dip and drive it overhead, splitting or squatting under it to lock out.' },
+    { name: 'Snatch', tip: 'Pull the bar from the floor to overhead in one continuous motion, dropping under the bar into a catch position.' },
+    { name: 'Hang Clean', tip: 'Start with the bar at knee or thigh height. Extend explosively through your hips and catch the bar on your shoulders.' },
+    { name: 'Push Press', tip: 'Dip slightly at the knees, then drive up explosively to help press the bar overhead using leg drive.' },
+    { name: 'Thruster', tip: 'Front squat down, then use the upward momentum to drive straight into an overhead press as you stand.' },
+    { name: 'Kettlebell Swing', tip: 'Hinge at the hips, not a squat. Snap your hips forward explosively to swing the kettlebell to shoulder height.' },
+    { name: 'Farmer’s Carry', tip: 'Grip heavy weights at your sides, keep your shoulders back and core braced, and walk with controlled steps.' },
+
+    // Cardio / conditioning
+    { name: 'Treadmill Run', tip: 'Keep a consistent pace and posture upright. Land midfoot rather than heel-striking hard.' },
+    { name: 'Rowing Machine', tip: 'Drive with your legs first, then lean back and pull the handle to your ribs, reversing the order on the way back.' },
+    { name: 'Assault Bike', tip: 'Push and pull evenly with both arms and legs. Pace yourself — it’s easy to redline early.' },
+    { name: 'Jump Rope', tip: 'Small, quick wrist turns rather than big arm swings. Land softly on the balls of your feet.' },
+    { name: 'Battle Ropes', tip: 'Keep your knees soft and core braced. Create waves by alternating your arms up and down explosively.' },
+    { name: 'Box Jump', tip: 'Swing your arms and drive through your legs to jump, landing softly with knees bent on top of the box.' },
+    { name: 'Burpee', tip: 'Drop to a plank, do a push-up, jump your feet back to your hands, then explode upward into a jump.' },
+    { name: 'Sled Push', tip: 'Lean into the sled with a flat back and drive through your legs with short, powerful steps.' },
+  ];
+
   // ---------- storage ----------
 
   function loadSets() {
@@ -276,6 +390,11 @@
 
   var exerciseInput = document.getElementById('exercise-input');
   var exerciseSuggestions = document.getElementById('exercise-suggestions');
+  var exerciseInfoBtn = document.getElementById('exercise-info-btn');
+  var exerciseInfoModal = document.getElementById('exercise-info-modal');
+  var exerciseInfoName = document.getElementById('exercise-info-name');
+  var exerciseInfoTip = document.getElementById('exercise-info-tip');
+  var exerciseInfoClose = document.getElementById('exercise-info-close');
   var weightInput = document.getElementById('weight-input');
   var repsInput = document.getElementById('reps-input');
   var failedRepBtn = document.getElementById('failed-rep-btn');
@@ -831,7 +950,18 @@
     repsInput.value = last.reps;
   }
 
+  function findLibraryEntry(name) {
+    var key = name.trim().toLowerCase();
+    if (!key) return null;
+    return EXERCISE_LIBRARY.find(function (e) { return e.name.toLowerCase() === key; }) || null;
+  }
+
+  function updateExerciseInfoBtn() {
+    exerciseInfoBtn.classList.toggle('hidden', !findLibraryEntry(exerciseInput.value));
+  }
+
   function updateSubmitLabel() {
+    updateExerciseInfoBtn();
     var name = exerciseInput.value.trim();
     if (!name) {
       logSubmitBtn.textContent = 'Log Set';
@@ -1296,14 +1426,24 @@
     exerciseSuggestions.innerHTML = '';
   }
 
+  function searchableExerciseNames() {
+    var seen = {};
+    var out = [];
+    distinctExercises(state.sets).concat(EXERCISE_LIBRARY.map(function (e) { return e.name; })).forEach(function (name) {
+      var key = name.toLowerCase();
+      if (!seen[key]) { seen[key] = true; out.push(name); }
+    });
+    return out;
+  }
+
   function renderSuggestions() {
     var query = exerciseInput.value.trim().toLowerCase();
     if (!query) { hideSuggestions(); return; }
-    var matches = distinctExercises(state.sets).filter(function (name) {
+    var matches = searchableExerciseNames().filter(function (name) {
       return name.toLowerCase().indexOf(query) !== -1 && name.toLowerCase() !== query;
     });
     if (matches.length === 0) { hideSuggestions(); return; }
-    exerciseSuggestions.innerHTML = matches.slice(0, 6).map(function (name) {
+    exerciseSuggestions.innerHTML = matches.slice(0, 8).map(function (name) {
       return '<div class="suggestion-item">' + escapeHtml(name) + '</div>';
     }).join('');
     exerciseSuggestions.classList.remove('hidden');
@@ -1321,6 +1461,18 @@
     var item = e.target.closest('.suggestion-item');
     if (!item) return;
     chooseExercise(item.textContent);
+  });
+
+  exerciseInfoBtn.addEventListener('click', function () {
+    var entry = findLibraryEntry(exerciseInput.value);
+    if (!entry) return;
+    exerciseInfoName.textContent = entry.name;
+    exerciseInfoTip.textContent = entry.tip;
+    exerciseInfoModal.classList.remove('hidden');
+  });
+
+  exerciseInfoClose.addEventListener('click', function () {
+    exerciseInfoModal.classList.add('hidden');
   });
 
   exerciseInput.addEventListener('focus', renderSuggestions);

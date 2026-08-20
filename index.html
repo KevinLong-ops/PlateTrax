@@ -547,11 +547,37 @@
 
   #exercise-input {
     font-size: 1.1rem;
-    padding: 0.8rem 0.7rem;
+    padding: 0.8rem 2.6rem 0.8rem 0.7rem;
   }
 
   .autocomplete-wrap {
     position: relative;
+  }
+
+  .exercise-info-btn {
+    position: absolute;
+    right: 0.55rem;
+    top: 0.65rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1.5px solid var(--rust-bright);
+    color: var(--rust-bright);
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .exercise-info-btn.hidden {
+    display: none;
+  }
+
+  .exercise-info-tip {
+    text-align: left;
   }
 
   .suggestions-dropdown {
@@ -1672,6 +1698,7 @@
             <label class="field-label" for="exercise-input">Exercise</label>
             <div class="autocomplete-wrap">
               <input id="exercise-input" placeholder="Search or add exercise" autocomplete="off" required>
+              <button type="button" id="exercise-info-btn" class="exercise-info-btn hidden" aria-label="Show form tips">i</button>
               <div id="exercise-suggestions" class="suggestions-dropdown hidden"></div>
             </div>
           </div>
@@ -1894,6 +1921,16 @@
       <div class="modal-actions">
         <button id="edit-cancel" class="btn-ghost" type="button">Cancel</button>
         <button id="edit-save" class="btn-primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exercise-info-modal" class="modal hidden">
+    <div class="modal-box edit-modal-box">
+      <h2 id="exercise-info-name">Exercise</h2>
+      <p id="exercise-info-tip" class="exercise-info-tip"></p>
+      <div class="modal-actions">
+        <button id="exercise-info-close" class="btn-primary" type="button">Close</button>
       </div>
     </div>
   </div>
