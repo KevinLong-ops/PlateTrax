@@ -892,6 +892,46 @@
     font-size: 1rem;
   }
 
+  /* Failed rep toggle */
+  .failed-rep-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    background: transparent;
+    color: var(--chalk-dim);
+    border: 1px dashed var(--panel-border);
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 6px;
+    transition: transform 0.08s ease;
+  }
+
+  .failed-rep-btn.active {
+    background: var(--danger);
+    border: 1px solid var(--danger-bright);
+    color: var(--chalk);
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+  }
+
+  .failed-rep-btn:active {
+    transform: scale(0.98);
+  }
+
+  .fail-badge {
+    display: inline-block;
+    background: var(--danger);
+    color: var(--chalk);
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+  }
+
   /* Plate calculator */
   .plate-calc-btn {
     width: 100%;
@@ -1473,6 +1513,7 @@
                 <input type="number" id="reps-input" inputmode="numeric" min="1" step="1" required>
                 <button type="button" class="step-btn" data-field="reps" data-dir="1">+</button>
               </div>
+              <button type="button" id="failed-rep-btn" class="failed-rep-btn" aria-pressed="false">&#128165; Failed Rep</button>
             </div>
           </div>
 
@@ -1669,6 +1710,7 @@
           <input type="text" id="edit-note-input" maxlength="120" placeholder="e.g. felt heavy, knee twinge">
         </label>
       </div>
+      <button type="button" id="edit-failed-rep-btn" class="failed-rep-btn" aria-pressed="false">&#128165; Failed Rep</button>
       <div class="modal-actions">
         <button id="edit-cancel" class="btn-ghost" type="button">Cancel</button>
         <button id="edit-save" class="btn-primary" type="button">Save</button>

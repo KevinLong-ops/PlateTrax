@@ -123,6 +123,8 @@
     restAlertFired: false,
     editingEntryId: null,
     pendingConfirmAction: null,
+    failedRep: false,
+    editFailedRep: false,
     syncCode: localStorage.getItem(SYNC_CODE_KEY),
     syncStatus: 'idle',
     lastSyncedAt: null,
@@ -274,6 +276,7 @@
   var exerciseSuggestions = document.getElementById('exercise-suggestions');
   var weightInput = document.getElementById('weight-input');
   var repsInput = document.getElementById('reps-input');
+  var failedRepBtn = document.getElementById('failed-rep-btn');
   var dateInput = document.getElementById('date-input');
   var logForm = document.getElementById('log-form');
   var logSubmitBtn = document.getElementById('log-submit-btn');
@@ -339,6 +342,7 @@
   var editWeightInput = document.getElementById('edit-weight-input');
   var editRepsInput = document.getElementById('edit-reps-input');
   var editNoteInput = document.getElementById('edit-note-input');
+  var editFailedRepBtn = document.getElementById('edit-failed-rep-btn');
   var editCancelBtn = document.getElementById('edit-cancel');
   var editSaveBtn = document.getElementById('edit-save');
 
@@ -781,6 +785,30 @@
 
   Array.prototype.forEach.call(document.querySelectorAll('.step-btn'), bindStepper);
 
+  // ---------- failed rep toggle ----------
+
+  function updateFailedRepBtn() {
+    failedRepBtn.classList.toggle('active', state.failedRep);
+    failedRepBtn.setAttribute('aria-pressed', state.failedRep ? 'true' : 'false');
+    failedRepBtn.innerHTML = state.failedRep ? '&#128165; Failed Rep &#10003;' : '&#128165; Failed Rep';
+  }
+
+  failedRepBtn.addEventListener('click', function () {
+    state.failedRep = !state.failedRep;
+    updateFailedRepBtn();
+  });
+
+  function updateEditFailedRepBtn() {
+    editFailedRepBtn.classList.toggle('active', state.editFailedRep);
+    editFailedRepBtn.setAttribute('aria-pressed', state.editFailedRep ? 'true' : 'false');
+    editFailedRepBtn.innerHTML = state.editFailedRep ? '&#128165; Failed Rep &#10003;' : '&#128165; Failed Rep';
+  }
+
+  editFailedRepBtn.addEventListener('click', function () {
+    state.editFailedRep = !state.editFailedRep;
+    updateEditFailedRepBtn();
+  });
+
   // ---------- exercise defaults autofill + set-number badge ----------
 
   function applyExerciseDefaults(name) {
@@ -942,6 +970,7 @@
       date: date,
       createdAt: Date.now(),
       workoutId: state.workoutActive ? state.currentWorkoutId : null,
+      failed: state.failedRep,
     };
 
     state.sets.push(entry);
@@ -961,6 +990,8 @@
     exerciseInput.value = exercise;
     weightInput.value = weight;
     repsInput.value = reps;
+    state.failedRep = false;
+    updateFailedRepBtn();
 
     render();
     updateSubmitLabel();
@@ -1306,7 +1337,7 @@
     group.entries.forEach(function (entry, idx) {
       var isPR = !!prIds[entry.id];
       var isRepPR = !!repPrIds[entry.id];
-      var badges = (isPR ? ' <span class="pr-badge">PR</span>' : '') + (isRepPR ? ' <span class="pr-badge rep-pr-badge">REP PR</span>' : '');
+      var badges = (isPR ? ' <span class="pr-badge">PR</span>' : '') + (isRepPR ? ' <span class="pr-badge rep-pr-badge">REP PR</span>' : '') + (entry.failed ? ' <span class="fail-badge">FAILED REP ' + (entry.reps + 1) + '</span>' : '');
       html += '  <div class="set-row" data-id="' + entry.id + '">';
       html += '    <span class="set-row-label">Set ' + (idx + 1) + '</span>';
       html += '    <span class="set-row-main">' + entry.weight + ' lb &times; ' + entry.reps + ' reps' + badges + '</span>';
@@ -1344,6 +1375,8 @@
     editWeightInput.value = entry.weight;
     editRepsInput.value = entry.reps;
     editNoteInput.value = entry.note || '';
+    state.editFailedRep = !!entry.failed;
+    updateEditFailedRepBtn();
     editModal.classList.remove('hidden');
   }
 
@@ -1363,6 +1396,7 @@
     entry.weight = weight;
     entry.reps = reps;
     entry.note = editNoteInput.value.trim();
+    entry.failed = state.editFailedRep;
     saveSets(state.sets);
     closeEditModal();
     render();
