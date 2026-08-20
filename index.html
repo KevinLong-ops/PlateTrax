@@ -904,6 +904,47 @@
     letter-spacing: 0.05em;
   }
 
+  .plate-btn-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .plate-size-btn {
+    height: 52px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--chalk);
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: 6px;
+    line-height: 1.1;
+    user-select: none;
+    transition: transform 0.08s ease;
+  }
+
+  .plate-size-btn:active {
+    background: var(--rust);
+    color: var(--ink);
+    border-color: var(--rust);
+    transform: scale(0.93);
+    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+  }
+
+  .plate-size-btn.has-count {
+    border-color: var(--rust-bright);
+    color: var(--rust-bright);
+  }
+
+  .plate-size-btn .plate-size-count {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-top: 0.1rem;
+  }
+
   .plate-result {
     background: var(--bg);
     border: 1px solid var(--panel-border);
@@ -923,43 +964,6 @@
   .plate-result .plate-per-side {
     color: var(--rust-bright);
     font-weight: 600;
-  }
-
-  /* Step counter */
-  .step-modal-box {
-    text-align: center;
-  }
-
-  .step-modal-box .backup-note {
-    text-align: left;
-  }
-
-  .step-count-display {
-    font-family: 'Big Shoulders Stencil', sans-serif;
-    font-weight: 900;
-    font-size: 3.4rem;
-    color: var(--rust-bright);
-    text-shadow: 0 0 18px rgba(242,49,56,0.6);
-    margin: 0.5rem 0 0.2rem;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .step-status {
-    color: var(--chalk-dim);
-    font-size: 0.8rem;
-    margin: 0 0 1.1rem;
-  }
-
-  .step-modal-actions {
-    margin-bottom: 0.75rem;
-  }
-
-  .step-modal-actions button {
-    flex: 1;
-  }
-
-  .step-close-btn {
-    width: 100%;
   }
 
   /* Summary actions */
@@ -1459,7 +1463,7 @@
                 <input type="number" id="weight-input" inputmode="decimal" min="0" step="0.5" required>
                 <button type="button" class="step-btn" data-field="weight" data-dir="1">+</button>
               </div>
-              <button type="button" id="plate-calc-btn" class="plate-calc-btn">&#9878; Show Plates</button>
+              <button type="button" id="plate-calc-btn" class="plate-calc-btn">&#9878; Plate Calculator</button>
             </div>
             <div class="stepper">
               <span class="stepper-label">Reps</span>
@@ -1470,8 +1474,6 @@
               </div>
             </div>
           </div>
-
-          <button type="button" id="step-counter-btn" class="plate-calc-btn">&#128094; Step Counter</button>
 
           <div>
             <label class="field-label" for="date-input">Date</label>
@@ -1601,10 +1603,6 @@
               <span class="summary-stat-value" id="summary-volume">0</span>
               <span class="summary-stat-label">Volume (lb)</span>
             </div>
-            <div class="summary-stat hidden" id="summary-steps-stat">
-              <span class="summary-stat-value" id="summary-steps">0</span>
-              <span class="summary-stat-label">Steps</span>
-            </div>
           </div>
           <div id="summary-exercise-list"></div>
         </div>
@@ -1696,31 +1694,27 @@
     <div class="modal-box edit-modal-box">
       <h2>Plate Calculator</h2>
       <div class="edit-modal-fields">
-        <label class="field-label" for="plate-target-input">Target Weight (lb)
-          <input type="number" id="plate-target-input" inputmode="decimal" min="0" step="0.5">
-        </label>
         <label class="field-label" for="plate-bar-input">Bar Weight (lb)
           <input type="number" id="plate-bar-input" inputmode="decimal" min="0" step="0.5" value="45">
         </label>
+      </div>
+      <p class="field-label" style="margin-top: 0.85rem;">Plates per side (tap to add)</p>
+      <div class="plate-btn-row">
+        <button type="button" class="plate-size-btn" data-plate="45">45</button>
+        <button type="button" class="plate-size-btn" data-plate="35">35</button>
+        <button type="button" class="plate-size-btn" data-plate="25">25</button>
+        <button type="button" class="plate-size-btn" data-plate="10">10</button>
+        <button type="button" class="plate-size-btn" data-plate="5">5</button>
+        <button type="button" class="plate-size-btn" data-plate="2.5">2.5</button>
+      </div>
+      <div class="modal-actions">
+        <button id="plate-clear-btn" class="btn-ghost" type="button">Clear</button>
+        <button id="plate-calculate-btn" class="btn-primary" type="button">Calculate</button>
       </div>
       <div id="plate-result" class="plate-result"></div>
       <div class="modal-actions">
         <button id="plate-close" class="btn-primary" type="button">Close</button>
       </div>
-    </div>
-  </div>
-
-  <div id="step-modal" class="modal hidden">
-    <div class="modal-box edit-modal-box step-modal-box">
-      <h2>Step Counter</h2>
-      <p class="backup-note">Counts steps using your phone's motion sensor while this is open and the screen is on — it won't count in the background or all day, but it's handy for a treadmill or cardio block mid-workout.</p>
-      <div class="step-count-display" id="step-count-display">0</div>
-      <p class="step-status" id="step-status-text">Not started</p>
-      <div class="modal-actions step-modal-actions">
-        <button id="step-toggle-btn" class="btn-primary" type="button">Start</button>
-        <button id="step-reset-btn" class="btn-ghost" type="button">Reset</button>
-      </div>
-      <button id="step-close-btn" class="btn-ghost step-close-btn" type="button">Close</button>
     </div>
   </div>
 

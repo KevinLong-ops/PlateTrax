@@ -126,8 +126,6 @@
     syncCode: localStorage.getItem(SYNC_CODE_KEY),
     syncStatus: 'idle',
     lastSyncedAt: null,
-    workoutSteps: 0,
-    stepCounting: false,
     // Guards against pushing stale pre-pull local data over a fresher cloud copy
     // while the initial pull (on page load) is still in flight.
     syncReady: false,
@@ -326,8 +324,6 @@
   var summaryDuration = document.getElementById('summary-duration');
   var summarySets = document.getElementById('summary-sets');
   var summaryVolume = document.getElementById('summary-volume');
-  var summarySteps = document.getElementById('summary-steps');
-  var summaryStepsStat = document.getElementById('summary-steps-stat');
   var summaryExerciseList = document.getElementById('summary-exercise-list');
   var summaryDoneBtn = document.getElementById('summary-done-btn');
 
@@ -367,18 +363,12 @@
 
   var plateCalcBtn = document.getElementById('plate-calc-btn');
   var plateModal = document.getElementById('plate-modal');
-  var plateTargetInput = document.getElementById('plate-target-input');
   var plateBarInput = document.getElementById('plate-bar-input');
   var plateResult = document.getElementById('plate-result');
   var plateCloseBtn = document.getElementById('plate-close');
-
-  var stepCounterBtn = document.getElementById('step-counter-btn');
-  var stepModal = document.getElementById('step-modal');
-  var stepCountDisplay = document.getElementById('step-count-display');
-  var stepStatusText = document.getElementById('step-status-text');
-  var stepToggleBtn = document.getElementById('step-toggle-btn');
-  var stepResetBtn = document.getElementById('step-reset-btn');
-  var stepCloseBtn = document.getElementById('step-close-btn');
+  var plateSizeBtns = document.querySelectorAll('.plate-size-btn');
+  var plateClearBtn = document.getElementById('plate-clear-btn');
+  var plateCalculateBtn = document.getElementById('plate-calculate-btn');
 
   var summaryShareBtn = document.getElementById('summary-share-btn');
   var summarySaveTemplateBtn = document.getElementById('summary-save-template-btn');
@@ -641,7 +631,6 @@
     state.lastSetTime = null;
     state.restAlertFired = false;
     state.activeTemplateExercises = [];
-    state.workoutSteps = 0;
     state.currentWorkoutId = 'workout_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
     workoutStatusBar.classList.remove('hidden');
     appEl.classList.add('with-status-bar');
@@ -666,18 +655,16 @@
   // sets logged is treated as a no-op (nothing worth showing in history).
   function endWorkout() {
     var saved = null;
-    if (state.stepCounting) stopStepCounting();
     if (state.workoutActive && state.currentWorkoutId) {
       var workoutId = state.currentWorkoutId;
       var loggedInWorkout = state.sets.filter(function (s) { return s.workoutId === workoutId; });
-      if (loggedInWorkout.length > 0 || state.workoutSteps > 0) {
+      if (loggedInWorkout.length > 0) {
         saved = {
           id: workoutId,
           date: dateStrFromDate(new Date(state.workoutStartTime)),
           startedAt: state.workoutStartTime,
           endedAt: Date.now(),
           durationMs: Date.now() - state.workoutStartTime,
-          steps: state.workoutSteps,
         };
         state.workouts.push(saved);
         saveWorkouts(state.workouts);
@@ -1461,9 +1448,8 @@
       var exerciseNames = distinctExercises(loggedInWorkout);
       var totalVolume = loggedInWorkout.reduce(function (sum, s) { return sum + volumeOf(s); }, 0);
 
-      var exercisesText = exerciseNames.join(', ') || (w.steps > 0 ? 'Cardio' : 'No exercises logged');
+      var exercisesText = exerciseNames.join(', ') || 'No exercises logged';
       var statsText = loggedInWorkout.length + (loggedInWorkout.length === 1 ? ' set' : ' sets') + ' &middot; Vol ' + Math.round(totalVolume).toLocaleString() + ' lb';
-      if (w.steps > 0) statsText += ' &middot; ' + w.steps.toLocaleString() + ' steps';
 
       var html = '<div class="workout-card">';
       html += '  <div class="workout-card-header">';
@@ -1488,12 +1474,6 @@
     summaryDuration.textContent = formatElapsed(workout.durationMs);
     summarySets.textContent = workoutSets.length;
     summaryVolume.textContent = Math.round(totalVolume).toLocaleString();
-    if (workout.steps > 0) {
-      summarySteps.textContent = workout.steps.toLocaleString();
-      summaryStepsStat.classList.remove('hidden');
-    } else {
-      summaryStepsStat.classList.add('hidden');
-    }
 
     var groups = groupByExercise(workoutSets);
     summaryExerciseList.innerHTML = groups.map(function (g) {
@@ -1625,152 +1605,66 @@
 
   // ---------- plate calculator ----------
 
-  function calculatePlates(target, bar) {
-    var perSide = (target - bar) / 2;
-    if (perSide <= 0) return { perSide: 0, plates: [], remainder: 0 };
-    var remaining = perSide;
-    var plates = [];
-    PLATE_SIZES.forEach(function (p) {
-      var count = Math.floor(remaining / p + 1e-9);
-      if (count > 0) {
-        plates.push({ plate: p, count: count });
-        remaining -= count * p;
-      }
+  var plateCounts = {};
+  PLATE_SIZES.forEach(function (p) { plateCounts[p] = 0; });
+
+  function updatePlateButtons() {
+    Array.prototype.forEach.call(plateSizeBtns, function (btn) {
+      var size = btn.getAttribute('data-plate');
+      var count = plateCounts[size];
+      btn.innerHTML = size + (count > 0 ? '<span class="plate-size-count">&times; ' + count + '</span>' : '');
+      btn.classList.toggle('has-count', count > 0);
     });
-    return { perSide: perSide, plates: plates, remainder: remaining };
+  }
+
+  function resetPlateCounts() {
+    PLATE_SIZES.forEach(function (p) { plateCounts[p] = 0; });
+    updatePlateButtons();
+    plateResult.innerHTML = '';
   }
 
   function renderPlateResult() {
-    var target = parseFloat(plateTargetInput.value);
     var bar = parseFloat(plateBarInput.value);
-    if (isNaN(target) || isNaN(bar)) { plateResult.innerHTML = ''; return; }
-    if (target < bar) {
-      plateResult.innerHTML = '<p class="empty-state">Target is less than the bar weight.</p>';
-      return;
-    }
-    var r = calculatePlates(target, bar);
-    var html = '<div class="plate-line"><span>Per side</span><span class="plate-per-side">' + r.perSide.toFixed(1).replace(/\.0$/, '') + ' lb</span></div>';
-    if (r.plates.length === 0) {
+    if (isNaN(bar)) { plateResult.innerHTML = '<p class="empty-state">Enter a bar weight.</p>'; return; }
+    var perSide = 0;
+    var plates = [];
+    PLATE_SIZES.forEach(function (p) {
+      var count = plateCounts[p];
+      if (count > 0) {
+        plates.push({ plate: p, count: count });
+        perSide += p * count;
+      }
+    });
+    var total = bar + perSide * 2;
+    var html = '<div class="plate-line"><span>Total weight</span><span class="plate-per-side">' + total.toFixed(1).replace(/\.0$/, '') + ' lb</span></div>';
+    html += '<div class="plate-line"><span>Per side</span><span>' + perSide.toFixed(1).replace(/\.0$/, '') + ' lb</span></div>';
+    if (plates.length === 0) {
       html += '<div class="plate-line"><span>Just the bar</span><span></span></div>';
     } else {
-      r.plates.forEach(function (p) {
+      plates.forEach(function (p) {
         html += '<div class="plate-line"><span>' + p.plate + ' lb plate' + (p.count > 1 ? 's' : '') + '</span><span>&times; ' + p.count + '</span></div>';
       });
-    }
-    if (r.remainder > 0.01) {
-      html += '<div class="plate-line"><span>Can\'t match exactly, off by</span><span>' + r.remainder.toFixed(1) + ' lb</span></div>';
     }
     plateResult.innerHTML = html;
   }
 
   plateCalcBtn.addEventListener('click', function () {
-    plateTargetInput.value = weightInput.value || '';
-    renderPlateResult();
+    plateBarInput.value = 45;
+    resetPlateCounts();
     plateModal.classList.remove('hidden');
   });
 
-  plateTargetInput.addEventListener('input', renderPlateResult);
-  plateBarInput.addEventListener('input', renderPlateResult);
+  Array.prototype.forEach.call(plateSizeBtns, function (btn) {
+    btn.addEventListener('click', function () {
+      var size = btn.getAttribute('data-plate');
+      plateCounts[size]++;
+      updatePlateButtons();
+    });
+  });
+
+  plateClearBtn.addEventListener('click', resetPlateCounts);
+  plateCalculateBtn.addEventListener('click', renderPlateResult);
   plateCloseBtn.addEventListener('click', function () { plateModal.classList.add('hidden'); });
-
-  // ---------- step counter ----------
-  // Simple peak-detection pedometer: tracks the magnitude of the device's
-  // acceleration (including gravity), smooths it, and counts a step each time
-  // the signal rises well above its recent baseline then falls back — the
-  // pattern a walking/running gait produces. Only runs while this modal is
-  // open and the screen is on; there's no way for a web page to count steps
-  // in the background or system-wide.
-
-  var STEP_THRESHOLD = 1.2;
-  var STEP_MIN_INTERVAL_MS = 300;
-  var stepSmoothedMag = 9.8;
-  var stepRising = false;
-  var stepLastTime = 0;
-  var motionListenerAttached = false;
-
-  function updateStepDisplay() {
-    stepCountDisplay.textContent = state.workoutSteps;
-  }
-
-  function handleDeviceMotion(e) {
-    var acc = e.accelerationIncludingGravity;
-    if (!acc || acc.x === null || acc.x === undefined) return;
-    var mag = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
-    stepSmoothedMag = stepSmoothedMag * 0.9 + mag * 0.1;
-    var delta = mag - stepSmoothedMag;
-
-    if (!stepRising && delta > STEP_THRESHOLD) {
-      stepRising = true;
-    } else if (stepRising && delta < 0) {
-      stepRising = false;
-      var now = Date.now();
-      if (now - stepLastTime > STEP_MIN_INTERVAL_MS) {
-        stepLastTime = now;
-        state.workoutSteps++;
-        updateStepDisplay();
-      }
-    }
-  }
-
-  function startStepCounting() {
-    if (typeof DeviceMotionEvent === 'undefined') {
-      stepStatusText.textContent = 'Motion sensor not available on this device/browser.';
-      return;
-    }
-
-    function attachAndStart() {
-      if (!motionListenerAttached) {
-        window.addEventListener('devicemotion', handleDeviceMotion);
-        motionListenerAttached = true;
-      }
-      state.stepCounting = true;
-      stepToggleBtn.textContent = 'Stop';
-      stepStatusText.textContent = 'Counting…';
-    }
-
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission().then(function (result) {
-        if (result === 'granted') attachAndStart();
-        else stepStatusText.textContent = 'Motion access denied. Enable it in Settings > Safari > Motion & Orientation Access.';
-      }).catch(function () {
-        stepStatusText.textContent = 'Could not request motion access.';
-      });
-    } else {
-      attachAndStart();
-    }
-  }
-
-  function stopStepCounting() {
-    if (motionListenerAttached) {
-      window.removeEventListener('devicemotion', handleDeviceMotion);
-      motionListenerAttached = false;
-    }
-    state.stepCounting = false;
-    stepToggleBtn.textContent = 'Start';
-    stepStatusText.textContent = 'Paused at ' + state.workoutSteps + ' steps.';
-  }
-
-  stepCounterBtn.addEventListener('click', function () {
-    updateStepDisplay();
-    stepStatusText.textContent = state.stepCounting ? 'Counting…' : (state.workoutSteps > 0 ? 'Paused at ' + state.workoutSteps + ' steps.' : 'Not started');
-    stepToggleBtn.textContent = state.stepCounting ? 'Stop' : 'Start';
-    stepModal.classList.remove('hidden');
-  });
-
-  stepToggleBtn.addEventListener('click', function () {
-    if (state.stepCounting) stopStepCounting();
-    else startStepCounting();
-  });
-
-  stepResetBtn.addEventListener('click', function () {
-    state.workoutSteps = 0;
-    updateStepDisplay();
-    stepStatusText.textContent = state.stepCounting ? 'Counting…' : 'Not started';
-  });
-
-  stepCloseBtn.addEventListener('click', function () {
-    stepModal.classList.add('hidden');
-  });
 
   // ---------- workout templates ----------
 
