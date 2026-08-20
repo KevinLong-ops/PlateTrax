@@ -1841,8 +1841,8 @@
     chartEmpty.classList.add('hidden');
     chartSvg.classList.remove('hidden');
 
-    var W = 640, H = 280;
-    var padL = 50, padR = 20, padT = 20, padB = 36;
+    var W = 640, H = 400;
+    var padL = 68, padR = 24, padT = 34, padB = 52;
     var plotW = W - padL - padR;
     var plotH = H - padT - padB;
 
@@ -1874,7 +1874,7 @@
       var v = minV + ((maxV - minV) * b) / bands;
       var y = yFor(v);
       svg += '<line class="chart-grid-line" x1="' + padL + '" y1="' + y + '" x2="' + (padL + plotW) + '" y2="' + y + '" />';
-      svg += '<text class="chart-axis-label" x="' + (padL - 8) + '" y="' + (y + 3) + '" text-anchor="end">' + Math.round(v).toLocaleString() + '</text>';
+      svg += '<text class="chart-axis-label" x="' + (padL - 12) + '" y="' + (y + 5) + '" text-anchor="end">' + Math.round(v).toLocaleString() + '</text>';
     }
 
     svg += '<line class="chart-axis-line" x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (padL + plotW) + '" y2="' + (padT + plotH) + '" />';
@@ -1884,7 +1884,7 @@
     points.forEach(function (p, i) {
       if (i % step !== 0 && i !== points.length - 1) return;
       var x = xFor(i);
-      svg += '<text class="chart-axis-label" x="' + x + '" y="' + (padT + plotH + 18) + '" text-anchor="middle">' + escapeHtml(formatShort(p.date)) + '</text>';
+      svg += '<text class="chart-axis-label" x="' + x + '" y="' + (padT + plotH + 26) + '" text-anchor="middle">' + escapeHtml(formatShort(p.date)) + '</text>';
     });
 
     var linePoints = points.map(function (p, i) { return xFor(i) + ',' + yFor(p.value); }).join(' ');
@@ -1893,10 +1893,10 @@
     points.forEach(function (p, i) {
       var x = xFor(i);
       var y = yFor(p.value);
-      svg += '<circle class="chart-point" cx="' + x + '" cy="' + y + '" r="4"><title>' + escapeHtml(formatDate(p.date)) + ': ' + Math.round(p.value).toLocaleString() + '</title></circle>';
+      svg += '<circle class="chart-point" cx="' + x + '" cy="' + y + '" r="6"><title>' + escapeHtml(formatDate(p.date)) + ': ' + Math.round(p.value).toLocaleString() + '</title></circle>';
     });
 
-    svg += '<text class="chart-axis-label" x="' + padL + '" y="12" text-anchor="start">' + escapeHtml(metricLabel(state.metric)) + '</text>';
+    svg += '<text class="chart-title-label" x="' + padL + '" y="18" text-anchor="start">' + escapeHtml(metricLabel(state.metric)) + '</text>';
 
     chartSvg.innerHTML = svg;
   }
