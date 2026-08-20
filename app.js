@@ -10,6 +10,10 @@
   var PINNED_KEY = 'ironlog.pinned.v1';
   var PLATE_SIZES = [45, 35, 25, 10, 5, 2.5];
 
+  var SYNC_CODE_KEY = 'ironlog.syncCode.v1';
+  var SUPABASE_URL = 'https://feqgozzxbjaoctwemmxp.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_QfHJbnEJANsrT3RkrkeLTA_YHg2VRej';
+
   // ---------- storage ----------
 
   function loadSets() {
@@ -119,7 +123,14 @@
     restAlertFired: false,
     editingEntryId: null,
     pendingConfirmAction: null,
+    syncCode: localStorage.getItem(SYNC_CODE_KEY),
+    syncStatus: 'idle',
+    lastSyncedAt: null,
+    // Guards against pushing stale pre-pull local data over a fresher cloud copy
+    // while the initial pull (on page load) is still in flight.
+    syncReady: false,
   };
+  state.syncReady = !state.syncCode;
 
   // ---------- calculations ----------
 
@@ -359,6 +370,16 @@
 
   var summaryShareBtn = document.getElementById('summary-share-btn');
   var summarySaveTemplateBtn = document.getElementById('summary-save-template-btn');
+
+  var syncDisabledView = document.getElementById('sync-disabled-view');
+  var syncEnabledView = document.getElementById('sync-enabled-view');
+  var syncEnableBtn = document.getElementById('sync-enable-btn');
+  var syncRestoreInput = document.getElementById('sync-restore-input');
+  var syncRestoreBtn = document.getElementById('sync-restore-btn');
+  var syncCodeDisplay = document.getElementById('sync-code-display');
+  var syncCodeCopyBtn = document.getElementById('sync-code-copy-btn');
+  var syncStatusText = document.getElementById('sync-status-text');
+  var syncDisableBtn = document.getElementById('sync-disable-btn');
 
   var toastTimer = null;
   var timerIntervalId = null;
@@ -994,12 +1015,38 @@
 
   // ---------- backup: export / import ----------
 
-  exportBtn.addEventListener('click', function () {
-    var payload = {
-      exportedAt: new Date().toISOString(),
+  function buildFullPayload() {
+    return {
       sets: state.sets,
       workouts: state.workouts,
+      templates: state.templates,
+      bodyweights: state.bodyweights,
+      pinnedExercises: state.pinnedExercises,
+      restTargetSeconds: state.restTargetSeconds,
     };
+  }
+
+  function applyFullPayload(data) {
+    state.sets = Array.isArray(data.sets) ? data.sets : [];
+    state.workouts = Array.isArray(data.workouts) ? data.workouts : [];
+    state.templates = Array.isArray(data.templates) ? data.templates : [];
+    state.bodyweights = Array.isArray(data.bodyweights) ? data.bodyweights : [];
+    state.pinnedExercises = Array.isArray(data.pinnedExercises) ? data.pinnedExercises : [];
+    state.restTargetSeconds = typeof data.restTargetSeconds === 'number' ? data.restTargetSeconds : null;
+
+    saveSets(state.sets);
+    saveWorkouts(state.workouts);
+    saveTemplates(state.templates);
+    saveBodyweights(state.bodyweights);
+    savePinned(state.pinnedExercises);
+    saveRestTarget(state.restTargetSeconds);
+
+    state.selectedExercise = null;
+    restBlock.querySelector('.status-label').textContent = restLabelText();
+  }
+
+  exportBtn.addEventListener('click', function () {
+    var payload = Object.assign({ exportedAt: new Date().toISOString() }, buildFullPayload());
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -1033,17 +1080,151 @@
         return;
       }
       openConfirm('Import will replace all current data with this backup. Continue?', 'Import', function () {
-        state.sets = parsed.sets;
-        state.workouts = parsed.workouts;
-        saveSets(state.sets);
-        saveWorkouts(state.workouts);
-        state.selectedExercise = null;
+        applyFullPayload(parsed);
         render();
         showToast('Backup imported.');
+        scheduleSyncPush();
       });
     };
     reader.readAsText(file);
   });
+
+  // ---------- cloud sync ----------
+
+  var syncPushTimer = null;
+  var syncHeaders = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json',
+  };
+
+  function renderSyncPanel() {
+    var enabled = !!state.syncCode;
+    syncDisabledView.classList.toggle('hidden', enabled);
+    syncEnabledView.classList.toggle('hidden', !enabled);
+    if (!enabled) return;
+
+    syncCodeDisplay.textContent = state.syncCode;
+    if (state.syncStatus === 'syncing') {
+      syncStatusText.textContent = 'Syncing…';
+    } else if (state.syncStatus === 'error') {
+      syncStatusText.textContent = 'Sync failed — will retry on the next change. (Offline is fine, your local data is safe.)';
+    } else if (state.lastSyncedAt) {
+      syncStatusText.textContent = 'Last synced ' + new Date(state.lastSyncedAt).toLocaleTimeString();
+    } else {
+      syncStatusText.textContent = 'Not synced yet.';
+    }
+  }
+
+  function syncPushNow() {
+    if (!state.syncCode) return;
+    state.syncStatus = 'syncing';
+    renderSyncPanel();
+    fetch(SUPABASE_URL + '/rest/v1/sync_data?on_conflict=sync_code', {
+      method: 'POST',
+      headers: Object.assign({ Prefer: 'resolution=merge-duplicates,return=minimal' }, syncHeaders),
+      body: JSON.stringify({
+        sync_code: state.syncCode,
+        payload: buildFullPayload(),
+        updated_at: new Date().toISOString(),
+      }),
+    }).then(function (res) {
+      state.syncStatus = res.ok ? 'idle' : 'error';
+      if (res.ok) state.lastSyncedAt = Date.now();
+      renderSyncPanel();
+    }).catch(function () {
+      state.syncStatus = 'error';
+      renderSyncPanel();
+    });
+  }
+
+  // Debounced so rapid changes (several sets logged in a row) collapse into one push.
+  function scheduleSyncPush() {
+    if (!state.syncCode || !state.syncReady) return;
+    if (syncPushTimer) clearTimeout(syncPushTimer);
+    syncPushTimer = setTimeout(syncPushNow, 1500);
+  }
+
+  function syncPull(code) {
+    return fetch(SUPABASE_URL + '/rest/v1/sync_data?sync_code=eq.' + encodeURIComponent(code) + '&select=payload,updated_at', {
+      headers: syncHeaders,
+    }).then(function (res) {
+      if (!res.ok) throw new Error('pull failed');
+      return res.json();
+    }).then(function (rows) {
+      return rows && rows[0] ? rows[0] : null;
+    });
+  }
+
+  syncEnableBtn.addEventListener('click', function () {
+    var code = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)).replace(/-/g, '');
+    state.syncCode = code;
+    localStorage.setItem(SYNC_CODE_KEY, code);
+    renderSyncPanel();
+    syncPushNow();
+    showToast('Cloud sync enabled. Save your code somewhere safe!');
+  });
+
+  syncCodeCopyBtn.addEventListener('click', function () {
+    if (!navigator.clipboard) { showToast('Could not copy — select the code manually.'); return; }
+    navigator.clipboard.writeText(state.syncCode).then(function () {
+      showToast('Sync code copied.');
+    }).catch(function () {
+      showToast('Could not copy — select the code manually.');
+    });
+  });
+
+  syncDisableBtn.addEventListener('click', function () {
+    openConfirm('Stop syncing this device? Your data already in the cloud stays there — this only stops updating it from here.', 'Disable', function () {
+      state.syncCode = null;
+      localStorage.removeItem(SYNC_CODE_KEY);
+      renderSyncPanel();
+    });
+  });
+
+  syncRestoreBtn.addEventListener('click', function () {
+    var code = syncRestoreInput.value.trim();
+    if (!code) return;
+    syncRestoreBtn.disabled = true;
+    syncPull(code).then(function (row) {
+      syncRestoreBtn.disabled = false;
+      if (!row) {
+        showToast('No data found for that code.');
+        return;
+      }
+      openConfirm('Restore this data? It will replace everything currently on this device.', 'Restore', function () {
+        applyFullPayload(row.payload);
+        state.syncCode = code;
+        localStorage.setItem(SYNC_CODE_KEY, code);
+        state.syncReady = true;
+        state.lastSyncedAt = Date.now();
+        render();
+        showToast('Data restored and sync enabled.');
+      });
+    }).catch(function () {
+      syncRestoreBtn.disabled = false;
+      showToast('Could not reach the server. Check your connection and try again.');
+    });
+  });
+
+  // On load, if a sync code already exists locally, pull down the latest cloud
+  // copy — this is what recovers your data after local storage gets wiped.
+  function initSyncOnLoad() {
+    if (!state.syncCode) return;
+    syncPull(state.syncCode).then(function (row) {
+      if (row && row.payload) {
+        applyFullPayload(row.payload);
+        state.lastSyncedAt = new Date(row.updated_at).getTime();
+        render();
+        renderMenuStat();
+      }
+      state.syncReady = true;
+      renderSyncPanel();
+    }).catch(function () {
+      state.syncReady = true;
+      renderSyncPanel();
+    });
+  }
 
   // ---------- exercise select / metric toggle (progress view) ----------
 
@@ -1716,8 +1897,10 @@
     renderRecords();
     renderBodyweights();
     renderTemplates();
+    renderSyncPanel();
     resetBtn.disabled = state.sets.length === 0;
     if (state.view === 'progress') renderChart();
+    scheduleSyncPush();
   }
 
   // ---------- init ----------
@@ -1726,4 +1909,5 @@
   restBlock.querySelector('.status-label').textContent = restLabelText();
   render();
   switchView('menu');
+  initSyncOnLoad();
 })();

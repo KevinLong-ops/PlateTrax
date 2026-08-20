@@ -962,6 +962,51 @@
     flex: 1;
   }
 
+  /* Cloud sync */
+  #sync-enable-btn {
+    width: 100%;
+    margin-bottom: 0.9rem;
+  }
+
+  .sync-restore-row {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .sync-restore-row input {
+    flex: 1;
+  }
+
+  .sync-restore-row .btn-ghost {
+    flex: 0 0 auto;
+  }
+
+  .sync-code-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sync-code-display {
+    flex: 1;
+    min-width: 0;
+    font-family: monospace;
+    font-size: 0.82rem;
+    color: var(--rust-bright);
+    word-break: break-all;
+  }
+
+  .sync-status {
+    color: var(--chalk-dim);
+    font-size: 0.8rem;
+    margin: 0 0 0.9rem;
+  }
+
   /* Edit set modal */
   .edit-modal-box {
     text-align: left;
@@ -1455,6 +1500,27 @@
           <h2>Past Workouts</h2>
           <div id="workout-history-list"></div>
           <p id="workout-history-empty" class="empty-state">No completed workouts yet.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Cloud Sync</h2>
+          <div id="sync-disabled-view">
+            <p class="backup-note">Automatically back up your data to the cloud so it survives even if this browser's storage gets wiped.</p>
+            <button id="sync-enable-btn" class="btn-primary" type="button">Enable Cloud Sync</button>
+            <div class="sync-restore-row">
+              <input type="text" id="sync-restore-input" placeholder="Have a sync code? Paste it here">
+              <button id="sync-restore-btn" class="btn-ghost" type="button">Restore</button>
+            </div>
+          </div>
+          <div id="sync-enabled-view" class="hidden">
+            <p class="backup-note">Cloud sync is active. Save this code somewhere safe (like your Notes app) — it's the only way to recover your data if this browser's storage gets wiped.</p>
+            <div class="sync-code-row">
+              <span id="sync-code-display" class="sync-code-display"></span>
+              <button id="sync-code-copy-btn" class="btn-ghost" type="button">Copy</button>
+            </div>
+            <p class="sync-status" id="sync-status-text"></p>
+            <button id="sync-disable-btn" class="btn-ghost" type="button">Disable Sync</button>
+          </div>
         </div>
 
         <div class="panel">
