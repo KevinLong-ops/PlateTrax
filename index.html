@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('ironlog.theme.v1');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>PlateTrax</title>
 <meta name="theme-color" content="#100c0c">
@@ -24,12 +32,42 @@
     --chalk-dim: #b08e8c;
     --rust: #d1232b;
     --rust-bright: #f23138;
+    --rust-rgb: 209,35,43;
+    --rust-bright-rgb: 242,49,56;
     --gold: #ffffff;
     --danger: #7a1216;
     --danger-bright: #9c171b;
     --ink: #170b0b;
     --tabbar-h: 68px;
     --statusbar-h: 46px;
+  }
+
+  :root[data-theme="blue"] {
+    --rust: #1f6fb3;
+    --rust-bright: #2f8fe0;
+    --rust-rgb: 31,111,179;
+    --rust-bright-rgb: 47,143,224;
+  }
+
+  :root[data-theme="orange"] {
+    --rust: #c8551a;
+    --rust-bright: #f2762e;
+    --rust-rgb: 200,85,26;
+    --rust-bright-rgb: 242,118,46;
+  }
+
+  :root[data-theme="green"] {
+    --rust: #2f8f3a;
+    --rust-bright: #3fc94f;
+    --rust-rgb: 47,143,58;
+    --rust-bright-rgb: 63,201,79;
+  }
+
+  :root[data-theme="purple"] {
+    --rust: #7327ab;
+    --rust-bright: #9a3ce0;
+    --rust-rgb: 115,39,171;
+    --rust-bright-rgb: 154,60,224;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -61,7 +99,7 @@
   }
 
   h1 {
-    text-shadow: 0 0 18px rgba(209,35,43,0.55), 0 0 3px rgba(242,49,56,0.5);
+    text-shadow: 0 0 18px rgba(var(--rust-rgb),0.55), 0 0 3px rgba(var(--rust-bright-rgb),0.5);
   }
 
   .title-bar {
@@ -78,7 +116,7 @@
     right: 0;
     height: 0.13em;
     background: var(--rust-bright);
-    box-shadow: 0 0 10px rgba(242,49,56,0.85);
+    box-shadow: 0 0 10px rgba(var(--rust-bright-rgb),0.85);
   }
 
   .t-emphasis {
@@ -86,7 +124,7 @@
     font-size: 1.12em;
     font-weight: 900;
     color: var(--rust-bright);
-    text-shadow: 2px 2px 0 var(--ink), 0 0 16px rgba(242,49,56,0.9);
+    text-shadow: 2px 2px 0 var(--ink), 0 0 16px rgba(var(--rust-bright-rgb),0.9);
     transform: translateY(-0.02em);
   }
 
@@ -142,6 +180,140 @@
     padding: 0.25rem 0.5rem;
   }
 
+  .header-settings {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 0.95rem);
+    right: max(0.9rem, calc((100vw - 480px) / 2 + 0.9rem));
+    background: none;
+    border: none;
+    color: var(--rust-bright);
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 0.3rem 0.55rem;
+    z-index: 20;
+    text-shadow: 0 0 8px rgba(var(--rust-bright-rgb),0.5);
+  }
+
+  /* Settings drawer */
+  .settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 55;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+  }
+
+  .settings-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease;
+  }
+
+  .settings-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(84vw, 320px);
+    background: var(--panel);
+    border-left: 1px solid var(--panel-border);
+    z-index: 56;
+    padding: calc(1.1rem + env(safe-area-inset-top, 0px)) 1.1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .settings-drawer.open {
+    transform: translateX(0);
+  }
+
+  .settings-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+
+  .settings-drawer-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rust-bright);
+  }
+
+  .settings-close {
+    background: none;
+    border: none;
+    color: var(--chalk-dim);
+    font-size: 1.7rem;
+    line-height: 1;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .settings-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+    color: var(--chalk);
+    font-size: 0.95rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .settings-menu-item:active {
+    border-color: var(--rust);
+  }
+
+  .settings-menu-arrow {
+    color: var(--chalk-dim);
+    font-size: 1.2rem;
+  }
+
+  .settings-feedback textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--chalk);
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.65rem;
+    resize: vertical;
+    margin-top: 0.35rem;
+  }
+
+  /* Personalization */
+  .theme-swatch-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1rem 0 1.4rem;
+    flex-wrap: wrap;
+  }
+
+  .theme-swatch {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--swatch-color);
+    border: 3px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3);
+  }
+
+  .theme-swatch.active {
+    border-color: var(--chalk);
+    box-shadow: 0 0 0 2px var(--bg), 0 0 10px rgba(var(--rust-bright-rgb),0.6);
+  }
+
   main.views {
     padding: 1rem;
   }
@@ -176,7 +348,7 @@
     height: 380px;
     max-width: 90vw;
     max-height: 90vw;
-    background: radial-gradient(circle, rgba(209,35,43,0.28) 0%, rgba(209,35,43,0.08) 45%, transparent 72%);
+    background: radial-gradient(circle, rgba(var(--rust-rgb),0.28) 0%, rgba(var(--rust-rgb),0.08) 45%, transparent 72%);
     pointer-events: none;
     z-index: 0;
   }
@@ -280,7 +452,7 @@
     padding: 0.85rem 1rem;
     margin-bottom: 1rem;
     text-align: left;
-    box-shadow: 0 4px 16px rgba(209,35,43,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    box-shadow: 0 4px 16px rgba(var(--rust-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.15);
     transition: transform 0.1s ease;
   }
 
@@ -333,7 +505,7 @@
     border-color: var(--rust);
     color: var(--ink);
     font-weight: 600;
-    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+    box-shadow: 0 0 10px rgba(var(--rust-rgb),0.5);
   }
 
   .chip-pinned:not(.active) {
@@ -448,7 +620,7 @@
     color: var(--ink);
     border-color: var(--rust);
     transform: scale(0.93);
-    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+    box-shadow: 0 0 10px rgba(var(--rust-rgb),0.5);
   }
 
   .stepper-row input {
@@ -498,14 +670,14 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    box-shadow: 0 4px 16px rgba(209,35,43,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.25);
+    box-shadow: 0 4px 16px rgba(var(--rust-rgb),0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.25);
     transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
 
   .btn-primary:active {
     background: var(--rust-bright);
     transform: scale(0.97);
-    box-shadow: 0 2px 8px rgba(209,35,43,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: 0 2px 8px rgba(var(--rust-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.1);
   }
 
   .btn-ghost {
@@ -610,7 +782,7 @@
 
   .chart-axis-line { stroke: var(--panel-border); stroke-width: 1.5; }
   .chart-grid-line { stroke: var(--panel-border); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.6; }
-  .chart-line { fill: none; stroke: var(--rust-bright); stroke-width: 4; filter: drop-shadow(0 0 5px rgba(242,49,56,0.65)); }
+  .chart-line { fill: none; stroke: var(--rust-bright); stroke-width: 4; filter: drop-shadow(0 0 5px rgba(var(--rust-bright-rgb),0.65)); }
   .chart-point { fill: var(--gold); stroke: var(--bg); stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
   .chart-axis-label { fill: var(--chalk-dim); font-family: 'Oswald', sans-serif; font-size: 16px; }
   .chart-title-label { fill: var(--chalk); font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 600; }
@@ -707,7 +879,7 @@
     font-weight: 800;
     font-size: 1rem;
     color: var(--rust-bright);
-    text-shadow: 0 0 6px rgba(242,49,56,0.4);
+    text-shadow: 0 0 6px rgba(var(--rust-bright-rgb),0.4);
   }
 
   .workout-card-exercises {
@@ -912,7 +1084,7 @@
     border: 1px solid var(--danger-bright);
     color: var(--chalk);
     font-weight: 600;
-    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+    box-shadow: 0 0 10px rgba(var(--rust-rgb),0.5);
   }
 
   .failed-rep-btn:active {
@@ -970,7 +1142,7 @@
     color: var(--ink);
     border-color: var(--rust);
     transform: scale(0.93);
-    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+    box-shadow: 0 0 10px rgba(var(--rust-rgb),0.5);
   }
 
   .plate-size-btn.has-count {
@@ -1147,7 +1319,7 @@
     font-weight: 800;
     font-size: 1.5rem;
     color: var(--rust-bright);
-    text-shadow: 0 0 8px rgba(242,49,56,0.5);
+    text-shadow: 0 0 8px rgba(var(--rust-bright-rgb),0.5);
   }
 
   .summary-stat-label {
@@ -1232,7 +1404,7 @@
     background: var(--rust);
     color: var(--chalk);
     transform: rotate(3deg);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 10px rgba(209,35,43,0.7);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 10px rgba(var(--rust-rgb),0.7);
   }
 
   .delete-btn {
@@ -1292,7 +1464,7 @@
     font-weight: 800;
     font-size: 1.15rem;
     color: var(--rust-bright);
-    text-shadow: 0 0 8px rgba(242,49,56,0.5);
+    text-shadow: 0 0 8px rgba(var(--rust-bright-rgb),0.5);
     font-variant-numeric: tabular-nums;
   }
 
@@ -1319,7 +1491,7 @@
 
   .status-block.rest-alert .status-value {
     color: var(--rust-bright);
-    text-shadow: 0 0 10px rgba(242,49,56,0.8);
+    text-shadow: 0 0 10px rgba(var(--rust-bright-rgb),0.8);
     animation: rest-alert-pulse 0.8s ease-in-out 3;
   }
 
@@ -1378,11 +1550,11 @@
 
   .tab-btn.active {
     color: var(--rust-bright);
-    text-shadow: 0 0 10px rgba(242,49,56,0.7);
+    text-shadow: 0 0 10px rgba(var(--rust-bright-rgb),0.7);
   }
 
   .tab-btn.active .tab-icon {
-    filter: drop-shadow(0 0 5px rgba(242,49,56,0.75));
+    filter: drop-shadow(0 0 5px rgba(var(--rust-bright-rgb),0.75));
   }
 
   .toast {
@@ -1460,6 +1632,8 @@
       <button id="header-back-btn" class="header-back hidden" type="button" aria-label="Back to menu">&#8249;</button>
       <h1><span class="title-bar">Plate<span class="t-emphasis">T</span>rax</span></h1>
     </header>
+
+    <button id="settings-btn" class="header-settings" type="button" aria-label="Settings">&#9881;</button>
 
     <main class="views">
       <!-- MENU / HOME VIEW -->
@@ -1757,6 +1931,42 @@
       <div id="plate-result" class="plate-result"></div>
       <div class="modal-actions">
         <button id="plate-close" class="btn-primary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-overlay" class="settings-overlay"></div>
+  <aside id="settings-drawer" class="settings-drawer">
+    <div class="settings-drawer-header">
+      <h2>Settings</h2>
+      <button id="settings-close-btn" class="settings-close" type="button" aria-label="Close settings">&times;</button>
+    </div>
+
+    <button type="button" id="personalization-btn" class="settings-menu-item">
+      <span>&#127912; Personalization</span>
+      <span class="settings-menu-arrow">&#8250;</span>
+    </button>
+
+    <div class="settings-feedback">
+      <label class="field-label" for="feedback-input">Feedback</label>
+      <textarea id="feedback-input" rows="4" maxlength="1000" placeholder="Bugs, ideas, anything you want changed…"></textarea>
+      <button type="button" id="feedback-send-btn" class="btn-primary" style="width: 100%; margin-top: 0.6rem;">Send Feedback</button>
+    </div>
+  </aside>
+
+  <div id="personalization-modal" class="modal hidden">
+    <div class="modal-box edit-modal-box">
+      <h2>Personalization</h2>
+      <p class="backup-note">Pick an accent color.</p>
+      <div class="theme-swatch-row">
+        <button type="button" class="theme-swatch" data-theme="red" style="--swatch-color:#f23138;" aria-label="Rust Red"></button>
+        <button type="button" class="theme-swatch" data-theme="blue" style="--swatch-color:#2f8fe0;" aria-label="Steel Blue"></button>
+        <button type="button" class="theme-swatch" data-theme="orange" style="--swatch-color:#f2762e;" aria-label="Forge Orange"></button>
+        <button type="button" class="theme-swatch" data-theme="green" style="--swatch-color:#3fc94f;" aria-label="Toxic Green"></button>
+        <button type="button" class="theme-swatch" data-theme="purple" style="--swatch-color:#9a3ce0;" aria-label="Royal Purple"></button>
+      </div>
+      <div class="modal-actions">
+        <button id="personalization-close-btn" class="btn-primary" type="button">Close</button>
       </div>
     </div>
   </div>

@@ -8,6 +8,8 @@
   var TEMPLATES_KEY = 'ironlog.templates.v1';
   var BODYWEIGHT_KEY = 'ironlog.bodyweights.v1';
   var PINNED_KEY = 'ironlog.pinned.v1';
+  var THEME_KEY = 'ironlog.theme.v1';
+  var FEEDBACK_EMAIL = 'kevinlong576@gmail.com';
   var PLATE_SIZES = [45, 35, 25, 10, 5, 2.5];
 
   var SYNC_CODE_KEY = 'ironlog.syncCode.v1';
@@ -376,6 +378,17 @@
 
   var summaryShareBtn = document.getElementById('summary-share-btn');
   var summarySaveTemplateBtn = document.getElementById('summary-save-template-btn');
+
+  var settingsBtn = document.getElementById('settings-btn');
+  var settingsOverlay = document.getElementById('settings-overlay');
+  var settingsDrawer = document.getElementById('settings-drawer');
+  var settingsCloseBtn = document.getElementById('settings-close-btn');
+  var personalizationBtn = document.getElementById('personalization-btn');
+  var personalizationModal = document.getElementById('personalization-modal');
+  var personalizationCloseBtn = document.getElementById('personalization-close-btn');
+  var themeSwatches = document.querySelectorAll('.theme-swatch');
+  var feedbackInput = document.getElementById('feedback-input');
+  var feedbackSendBtn = document.getElementById('feedback-send-btn');
 
   var syncDisabledView = document.getElementById('sync-disabled-view');
   var syncEnabledView = document.getElementById('sync-enabled-view');
@@ -1955,9 +1968,67 @@
     scheduleSyncPush();
   }
 
+  // ---------- settings drawer ----------
+
+  function openSettingsDrawer() {
+    settingsOverlay.classList.add('open');
+    settingsDrawer.classList.add('open');
+  }
+
+  function closeSettingsDrawer() {
+    settingsOverlay.classList.remove('open');
+    settingsDrawer.classList.remove('open');
+  }
+
+  settingsBtn.addEventListener('click', openSettingsDrawer);
+  settingsCloseBtn.addEventListener('click', closeSettingsDrawer);
+  settingsOverlay.addEventListener('click', closeSettingsDrawer);
+
+  feedbackSendBtn.addEventListener('click', function () {
+    var text = feedbackInput.value.trim();
+    if (!text) return;
+    var mailto = 'mailto:' + FEEDBACK_EMAIL +
+      '?subject=' + encodeURIComponent('PlateTrax Feedback') +
+      '&body=' + encodeURIComponent(text);
+    window.location.href = mailto;
+    feedbackInput.value = '';
+    closeSettingsDrawer();
+  });
+
+  // ---------- personalization ----------
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+    updateThemeSwatches();
+  }
+
+  function updateThemeSwatches() {
+    var current = document.documentElement.getAttribute('data-theme') || 'red';
+    Array.prototype.forEach.call(themeSwatches, function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-theme') === current);
+    });
+  }
+
+  personalizationBtn.addEventListener('click', function () {
+    updateThemeSwatches();
+    personalizationModal.classList.remove('hidden');
+  });
+
+  personalizationCloseBtn.addEventListener('click', function () {
+    personalizationModal.classList.add('hidden');
+  });
+
+  Array.prototype.forEach.call(themeSwatches, function (btn) {
+    btn.addEventListener('click', function () {
+      applyTheme(btn.getAttribute('data-theme'));
+    });
+  });
+
   // ---------- init ----------
 
   dateInput.value = todayStr();
+  applyTheme(localStorage.getItem(THEME_KEY) || 'red');
   restBlock.querySelector('.status-label').textContent = restLabelText();
   render();
   switchView('menu');
