@@ -1,0 +1,17 @@
+{
+  "name": "Platelog",
+  "short_name": "Platelog",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#100c0c",
+  "theme_color": "#100c0c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23d1232b'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23100c0c' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='23' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='77' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='23' cy='50' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='77' cy='50' r='3.2' fill='%23100c0c'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

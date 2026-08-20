@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Platelog</title>
+<meta name="theme-color" content="#100c0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Platelog">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23d1232b'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23100c0c' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='23' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='77' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='23' cy='50' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='77' cy='50' r='3.2' fill='%23100c0c'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23d1232b'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23100c0c' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='23' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='50' cy='77' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='23' cy='50' r='3.2' fill='%23100c0c'/%3E%3Ccircle cx='77' cy='50' r='3.2' fill='%23100c0c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil:wght@700;800;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #100c0c;
+    --panel: #1c1414;
+    --panel-border: #3d2020;
+    --chalk: #f2ece8;
+    --chalk-dim: #b08e8c;
+    --rust: #d1232b;
+    --rust-bright: #f23138;
+    --gold: #ffffff;
+    --danger: #7a1216;
+    --danger-bright: #9c171b;
+    --ink: #170b0b;
+    --tabbar-h: 68px;
+    --statusbar-h: 46px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--chalk);
+    font-family: 'Oswald', sans-serif;
+    min-height: 100vh;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse at top, rgba(255,255,255,0.03), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(0,0,0,0.4), transparent 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 4px);
+  }
+
+  h1, h2, h3 {
+    font-family: 'Big Shoulders Stencil', 'Oswald', sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--rust-bright);
+    margin: 0;
+  }
+
+  h1 {
+    text-shadow: 0 0 18px rgba(209,35,43,0.55), 0 0 3px rgba(242,49,56,0.5);
+  }
+
+  button, input, select { font-size: 16px; }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  .app.no-tabbar {
+    padding-bottom: 0;
+  }
+
+  .app.with-status-bar {
+    padding-bottom: calc(var(--tabbar-h) + var(--statusbar-h) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  .app.with-status-bar ~ #toast {
+    bottom: calc(var(--tabbar-h) + var(--statusbar-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+
+  .site-header {
+    text-align: center;
+    padding: calc(0.9rem + env(safe-area-inset-top, 0px)) 1rem 0.9rem;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+    border-bottom: 4px solid transparent;
+    border-image: repeating-linear-gradient(45deg, var(--rust) 0 8px, var(--ink) 8px 16px) 1;
+    position: relative;
+  }
+
+  .site-header h1 {
+    font-size: 2.1rem;
+    letter-spacing: 0.14em;
+  }
+
+  .header-back {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--rust-bright);
+    font-size: 1.8rem;
+    line-height: 1;
+    padding: 0.25rem 0.5rem;
+  }
+
+  main.views {
+    padding: 1rem;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Menu / home screen */
+  #view-menu.active {
+    display: flex;
+  }
+
+  .menu-hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: calc(1.5rem + env(safe-area-inset-top, 0px)) 0.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+  }
+
+  .menu-hero::before {
+    content: "";
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 380px;
+    height: 380px;
+    max-width: 90vw;
+    max-height: 90vw;
+    background: radial-gradient(circle, rgba(209,35,43,0.28) 0%, rgba(209,35,43,0.08) 45%, transparent 72%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .menu-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .menu-hero h1 {
+    font-size: 3.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .menu-hero .tagline {
+    margin: 0.5rem 0 2.5rem;
+    color: var(--chalk-dim);
+    letter-spacing: 0.25em;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .menu-stat {
+    color: var(--chalk-dim);
+    font-size: 0.85rem;
+    min-height: 1.2em;
+  }
+
+  .menu-stat-week {
+    margin-top: 0.3rem;
+    font-size: 0.78rem;
+  }
+
+  .menu-streak {
+    margin: 0.3rem 0 2.5rem;
+    font-size: 0.78rem;
+    min-height: 1.2em;
+    color: var(--gold);
+    text-shadow: 0 0 8px rgba(255,255,255,0.35);
+  }
+
+  .btn-start-workout {
+    width: 100%;
+    max-width: 300px;
+    height: 64px;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+  }
+
+  .menu-secondary {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .menu-secondary .btn-ghost {
+    padding: 0.65rem 1.2rem;
+  }
+
+  .panel {
+    background-color: var(--panel);
+    background-image:
+      radial-gradient(circle 2.5px at 12px 12px, #55504a 45%, transparent 48%),
+      radial-gradient(circle 2.5px at calc(100% - 12px) 12px, #55504a 45%, transparent 48%),
+      radial-gradient(circle 2.5px at 12px calc(100% - 12px), #55504a 45%, transparent 48%),
+      radial-gradient(circle 2.5px at calc(100% - 12px) calc(100% - 12px), #55504a 45%, transparent 48%);
+    border: 2px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 1.1rem;
+    position: relative;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .panel::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    border-radius: 8px 8px 0 0;
+  }
+
+  .panel h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.9rem;
+  }
+
+  /* Repeat-last card */
+  .repeat-card {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, var(--rust) 0%, #7a1216 100%);
+    color: var(--ink);
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    text-align: left;
+    box-shadow: 0 4px 16px rgba(209,35,43,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: transform 0.1s ease;
+  }
+
+  .repeat-card:active { transform: scale(0.98); }
+
+  .repeat-label {
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .repeat-detail {
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  /* Recent exercise chips */
+  .chip-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.15rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chip-row::-webkit-scrollbar { display: none; }
+
+  .chip {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--chalk-dim);
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: transform 0.1s ease;
+  }
+
+  .chip:active {
+    transform: scale(0.94);
+  }
+
+  .chip.active {
+    background: var(--rust);
+    border-color: var(--rust);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+  }
+
+  .chip-pinned:not(.active) {
+    border-color: var(--gold);
+    color: var(--chalk);
+  }
+
+  /* Log form */
+  form#log-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--chalk-dim);
+    margin-bottom: 0.35rem;
+  }
+
+  input, select {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--chalk);
+    font-family: 'Oswald', sans-serif;
+    padding: 0.7rem 0.7rem;
+    border-radius: 6px;
+    outline: none;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--rust);
+  }
+
+  #exercise-input {
+    font-size: 1.1rem;
+    padding: 0.8rem 0.7rem;
+  }
+
+  .autocomplete-wrap {
+    position: relative;
+  }
+
+  .suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 2px;
+    background: var(--panel);
+    border: 1px solid var(--rust);
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 15;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+
+  .suggestion-item {
+    padding: 0.7rem 0.8rem;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .suggestion-item:last-child { border-bottom: none; }
+
+  .suggestion-item:active {
+    background: var(--rust);
+    color: var(--ink);
+  }
+
+  .stepper-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .stepper-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--chalk-dim);
+    margin-bottom: 0.35rem;
+  }
+
+  .stepper-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 52px;
+    gap: 0.5rem;
+  }
+
+  .step-btn {
+    height: 52px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--chalk);
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-radius: 6px;
+    line-height: 1;
+    user-select: none;
+    transition: transform 0.08s ease;
+  }
+
+  .step-btn:active {
+    background: var(--rust);
+    color: var(--ink);
+    border-color: var(--rust);
+    transform: scale(0.93);
+    box-shadow: 0 0 10px rgba(209,35,43,0.5);
+  }
+
+  .stepper-row input {
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 600;
+    height: 52px;
+    padding: 0;
+  }
+
+  .log-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.2rem;
+  }
+
+  .btn-log {
+    flex: 1.7;
+    height: 56px;
+    font-size: 1.1rem;
+  }
+
+  .btn-end-exercise {
+    flex: 1;
+    height: 56px;
+    font-size: 0.78rem;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  button {
+    font-family: 'Oswald', sans-serif;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    transition: transform 0.08s ease;
+  }
+
+  button:active {
+    transform: scale(0.96);
+  }
+
+  .btn-primary {
+    background: var(--rust);
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 16px rgba(209,35,43,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.25);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .btn-primary:active {
+    background: var(--rust-bright);
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(209,35,43,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--chalk-dim);
+    border: 1px solid var(--panel-border);
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.3);
+  }
+
+  .btn-ghost:active {
+    color: var(--chalk);
+    border-color: var(--rust);
+  }
+
+  .btn-ghost:disabled {
+    opacity: 0.4;
+  }
+
+  .btn-ghost:disabled:active {
+    color: var(--chalk-dim);
+    border-color: var(--panel-border);
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: var(--chalk);
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .btn-danger:active { background: var(--danger-bright); }
+
+  /* Today section on Log view */
+  .today-section {
+    margin-top: 1.5rem;
+  }
+
+  .today-heading {
+    font-size: 0.95rem;
+    color: var(--chalk-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Chart */
+  .chart-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  #exercise-select {
+    padding: 0.7rem;
+  }
+
+  .metric-toggle {
+    display: flex;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .metric-toggle button {
+    flex: 1;
+    background: var(--bg);
+    color: var(--chalk-dim);
+    padding: 0.65rem 0.4rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-right: 1px solid var(--panel-border);
+  }
+
+  .metric-toggle button:last-child { border-right: none; }
+
+  .metric-toggle button.active {
+    background: var(--rust);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  #chart-container {
+    position: relative;
+    min-height: 240px;
+  }
+
+  #chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .chart-axis-line { stroke: var(--panel-border); stroke-width: 1; }
+  .chart-grid-line { stroke: var(--panel-border); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.6; }
+  .chart-line { fill: none; stroke: var(--rust-bright); stroke-width: 2.5; filter: drop-shadow(0 0 5px rgba(242,49,56,0.65)); }
+  .chart-point { fill: var(--gold); stroke: var(--bg); stroke-width: 1.5; filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+  .chart-axis-label { fill: var(--chalk-dim); font-family: 'Oswald', sans-serif; font-size: 10px; }
+
+  .empty-state {
+    color: var(--chalk-dim);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1.75rem 1rem;
+  }
+
+  .hidden { display: none !important; }
+
+  .session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .date-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .date-group:last-child { margin-bottom: 0; }
+
+  .date-heading {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--chalk-dim);
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .exercise-group {
+    margin-bottom: 1.1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px dashed var(--panel-border);
+  }
+
+  .date-group .exercise-group:last-child,
+  #today-list .exercise-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .exercise-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .exercise-group-name {
+    font-size: 1.02rem;
+    font-weight: 600;
+  }
+
+  .exercise-group-summary {
+    color: var(--chalk-dim);
+    font-size: 0.78rem;
+  }
+
+  .workout-card {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 0.75rem 0.9rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .workout-card:last-child {
+    margin-bottom: 0;
+  }
+
+  .workout-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .workout-card-date {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .workout-card-duration {
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--rust-bright);
+    text-shadow: 0 0 6px rgba(242,49,56,0.4);
+  }
+
+  .workout-card-exercises {
+    font-size: 0.88rem;
+    color: var(--chalk-dim);
+    margin-bottom: 0.2rem;
+  }
+
+  .workout-card-stats {
+    font-size: 0.78rem;
+    color: var(--chalk-dim);
+  }
+
+  /* Personal records */
+  .record-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px dashed var(--panel-border);
+  }
+
+  .record-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .record-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .record-detail {
+    font-size: 0.8rem;
+    color: var(--chalk-dim);
+    text-align: right;
+  }
+
+  .record-detail strong {
+    color: var(--rust-bright);
+    font-weight: 600;
+  }
+
+  .record-row-main {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .pin-btn {
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    color: var(--panel-border);
+    padding: 0.1rem;
+    line-height: 1;
+  }
+
+  .pin-btn.pinned {
+    color: var(--gold);
+    text-shadow: 0 0 6px rgba(255,255,255,0.5);
+  }
+
+  /* Body weight tracking */
+  .bodyweight-form {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .bodyweight-form input {
+    flex: 1;
+  }
+
+  .bodyweight-form button {
+    flex: 0 0 auto;
+    padding: 0 1.2rem;
+  }
+
+  .bodyweight-trend {
+    color: var(--chalk-dim);
+    font-size: 0.85rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .bw-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--panel-border);
+    font-size: 0.9rem;
+  }
+
+  .bw-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .bw-row-date {
+    color: var(--chalk-dim);
+    font-size: 0.8rem;
+  }
+
+  .bw-row-weight {
+    font-weight: 600;
+  }
+
+  .bw-delete-btn {
+    background: transparent;
+    color: var(--chalk-dim);
+    border: 1px solid var(--panel-border);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  /* History search */
+  .history-search {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  /* Templates */
+  .template-card {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 0.75rem 0.9rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .template-card:last-child {
+    margin-bottom: 0;
+  }
+
+  .template-info {
+    min-width: 0;
+  }
+
+  .template-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .template-exercises {
+    font-size: 0.78rem;
+    color: var(--chalk-dim);
+    margin-top: 0.15rem;
+  }
+
+  .template-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .template-start-btn {
+    background: var(--rust);
+    color: var(--ink);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.7rem;
+  }
+
+  .template-delete-btn {
+    background: transparent;
+    color: var(--chalk-dim);
+    border: 1px solid var(--panel-border);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+
+  /* Plate calculator */
+  .plate-calc-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    background: transparent;
+    color: var(--chalk-dim);
+    border: 1px dashed var(--panel-border);
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .plate-result {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 0.9rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    min-height: 3em;
+  }
+
+  .plate-result .plate-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+  }
+
+  .plate-result .plate-per-side {
+    color: var(--rust-bright);
+    font-weight: 600;
+  }
+
+  /* Summary actions */
+  .summary-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin: 1rem 0;
+  }
+
+  .summary-actions .btn-ghost {
+    flex: 1;
+  }
+
+  /* Set note */
+  .set-row-note {
+    color: var(--chalk-dim);
+    font-size: 0.78rem;
+    font-style: italic;
+    margin-top: -0.1rem;
+    margin-left: 3.6rem;
+    flex-basis: calc(100% - 3.6rem);
+  }
+
+  /* Backup panel */
+  .backup-note {
+    color: var(--chalk-dim);
+    font-size: 0.85rem;
+    margin: 0 0 1rem;
+  }
+
+  .backup-actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .backup-actions .btn-ghost {
+    flex: 1;
+  }
+
+  /* Edit set modal */
+  .edit-modal-box {
+    text-align: left;
+  }
+
+  .edit-modal-box h2 {
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .edit-modal-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .edit-modal-fields input {
+    margin-top: 0.35rem;
+  }
+
+  /* Workout summary screen */
+  .summary-panel {
+    margin-top: 1rem;
+  }
+
+  .summary-done-btn {
+    width: 100%;
+  }
+
+  .summary-stats {
+    display: flex;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0 1.25rem;
+  }
+
+  .summary-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.9rem 0.4rem;
+    background: var(--bg);
+  }
+
+  .summary-stat + .summary-stat {
+    border-left: 1px solid var(--panel-border);
+  }
+
+  .summary-stat-value {
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--rust-bright);
+    text-shadow: 0 0 8px rgba(242,49,56,0.5);
+  }
+
+  .summary-stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--chalk-dim);
+  }
+
+  .summary-exercise {
+    padding: 0.7rem 0;
+    border-bottom: 1px dashed var(--panel-border);
+  }
+
+  .summary-exercise:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .summary-exercise-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .summary-exercise-detail {
+    font-size: 0.82rem;
+    color: var(--chalk-dim);
+  }
+
+  .set-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.15rem;
+  }
+
+  .set-row-label {
+    color: var(--chalk-dim);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: 3.6rem;
+    flex-shrink: 0;
+  }
+
+  .set-row-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    cursor: pointer;
+    font-size: 0.92rem;
+  }
+
+  .set-row-main:active {
+    opacity: 0.65;
+  }
+
+  .pr-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    transform: rotate(-3deg);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 10px rgba(255,255,255,0.55);
+  }
+
+  .rep-pr-badge {
+    background: var(--rust);
+    color: var(--chalk);
+    transform: rotate(3deg);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 10px rgba(209,35,43,0.7);
+  }
+
+  .delete-btn {
+    background: transparent;
+    color: var(--chalk-dim);
+    border: 1px solid var(--panel-border);
+    width: 34px;
+    height: 34px;
+    line-height: 1;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .delete-btn:active {
+    color: var(--danger-bright);
+    border-color: var(--danger-bright);
+  }
+
+  /* Workout / rest timer bar */
+  .workout-status-bar {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+    height: var(--statusbar-h);
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--panel);
+    border-top: 1px solid var(--panel-border);
+    border-bottom: 2px solid var(--rust);
+    display: flex;
+    z-index: 19;
+  }
+
+  .status-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.15;
+  }
+
+  .status-block + .status-block {
+    border-left: 1px solid var(--panel-border);
+  }
+
+  .status-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--chalk-dim);
+  }
+
+  .status-value {
+    font-family: 'Big Shoulders Stencil', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--rust-bright);
+    text-shadow: 0 0 8px rgba(242,49,56,0.5);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .status-block.resting .status-value {
+    color: var(--gold);
+    text-shadow: 0 0 8px rgba(255,255,255,0.5);
+  }
+
+  #rest-block {
+    cursor: pointer;
+  }
+
+  #rest-block .status-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+
+  @keyframes rest-alert-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .status-block.rest-alert .status-value {
+    color: var(--rust-bright);
+    text-shadow: 0 0 10px rgba(242,49,56,0.8);
+    animation: rest-alert-pulse 0.8s ease-in-out 3;
+  }
+
+  .end-workout-btn {
+    flex: 0 0 auto;
+    width: 58px;
+    background: var(--danger);
+    color: var(--chalk);
+    border: none;
+    border-left: 1px solid var(--panel-border);
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .end-workout-btn:active {
+    background: var(--danger-bright);
+  }
+
+  /* Bottom tab bar */
+  .tab-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--panel);
+    border-top: 2px solid var(--rust);
+    display: flex;
+    max-width: 480px;
+    margin: 0 auto;
+    z-index: 20;
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--chalk-dim);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tab-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .tab-btn.active {
+    color: var(--rust-bright);
+    text-shadow: 0 0 10px rgba(242,49,56,0.7);
+  }
+
+  .tab-btn.active .tab-icon {
+    filter: drop-shadow(0 0 5px rgba(242,49,56,0.75));
+  }
+
+  .toast {
+    position: fixed;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    left: 50%;
+    transform: translateX(-50%);
+    transition: bottom 0.15s ease;
+    background: var(--panel);
+    border: 1px solid var(--rust);
+    color: var(--chalk);
+    padding: 0.7rem 1.1rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.9rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    z-index: 50;
+    width: calc(100% - 2rem);
+    max-width: 440px;
+    justify-content: space-between;
+  }
+
+  .toast button {
+    background: none;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    padding: 1.5rem;
+  }
+
+  .modal-box {
+    background: var(--panel);
+    border: 2px solid var(--rust);
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .modal-box p {
+    margin: 0 0 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 560px) {
+    .app { border-left: 1px solid var(--panel-border); border-right: 1px solid var(--panel-border); }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header class="site-header">
+      <button id="header-back-btn" class="header-back hidden" type="button" aria-label="Back to menu">&#8249;</button>
+      <h1>Platelog</h1>
+    </header>
+
+    <main class="views">
+      <!-- MENU / HOME VIEW -->
+      <section id="view-menu" class="view active">
+        <div class="menu-hero">
+          <h1>Platelog</h1>
+          <p class="tagline">Track it. Lift it. Beat it.</p>
+          <p class="menu-stat" id="menu-stat"></p>
+          <p class="menu-stat menu-stat-week" id="menu-stat-week"></p>
+          <p class="menu-streak" id="menu-streak"></p>
+          <button id="start-workout-btn" class="btn-primary btn-start-workout" type="button">Start Workout</button>
+          <div class="menu-secondary">
+            <button id="menu-progress-btn" class="btn-ghost" type="button">Progress</button>
+            <button id="menu-history-btn" class="btn-ghost" type="button">History</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOG VIEW -->
+      <section id="view-log" class="view">
+        <button id="repeat-last-btn" class="repeat-card hidden" type="button">
+          <span class="repeat-label">&#8635; Same as last</span>
+          <span class="repeat-detail" id="repeat-detail"></span>
+        </button>
+
+        <div class="chip-row" id="recent-chips"></div>
+
+        <form id="log-form">
+          <div>
+            <label class="field-label" for="exercise-input">Exercise</label>
+            <div class="autocomplete-wrap">
+              <input id="exercise-input" placeholder="Search or add exercise" autocomplete="off" required>
+              <div id="exercise-suggestions" class="suggestions-dropdown hidden"></div>
+            </div>
+          </div>
+
+          <div class="stepper-group">
+            <div class="stepper">
+              <span class="stepper-label">Weight (lb)</span>
+              <div class="stepper-row">
+                <button type="button" class="step-btn" data-field="weight" data-dir="-1">&minus;</button>
+                <input type="number" id="weight-input" inputmode="decimal" min="0" step="0.5" required>
+                <button type="button" class="step-btn" data-field="weight" data-dir="1">+</button>
+              </div>
+              <button type="button" id="plate-calc-btn" class="plate-calc-btn">&#9878; Show Plates</button>
+            </div>
+            <div class="stepper">
+              <span class="stepper-label">Reps</span>
+              <div class="stepper-row">
+                <button type="button" class="step-btn" data-field="reps" data-dir="-1">&minus;</button>
+                <input type="number" id="reps-input" inputmode="numeric" min="1" step="1" required>
+                <button type="button" class="step-btn" data-field="reps" data-dir="1">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" for="date-input">Date</label>
+            <input type="date" id="date-input" required>
+          </div>
+
+          <div class="log-actions">
+            <button type="submit" class="btn-primary btn-log" id="log-submit-btn">Log Set</button>
+            <button type="button" class="btn-ghost btn-end-exercise" id="end-exercise-btn">End Exercise</button>
+          </div>
+        </form>
+
+        <div class="today-section">
+          <h2 class="today-heading">Today</h2>
+          <div id="today-list"></div>
+          <p id="today-empty" class="empty-state">Nothing logged yet today.</p>
+        </div>
+      </section>
+
+      <!-- PROGRESS VIEW -->
+      <section id="view-progress" class="view">
+        <div class="panel chart-panel">
+          <h2>Progress</h2>
+          <div class="chart-controls">
+            <select id="exercise-select"></select>
+            <div class="metric-toggle" id="metric-toggle">
+              <button type="button" data-metric="topWeight" class="active">Top Weight</button>
+              <button type="button" data-metric="e1rm">Est. 1RM</button>
+              <button type="button" data-metric="volume">Volume</button>
+            </div>
+          </div>
+          <div id="chart-container">
+            <svg id="chart-svg" viewBox="0 0 640 280" preserveAspectRatio="xMidYMid meet"></svg>
+            <p id="chart-empty" class="empty-state">Log a set to see progress.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Personal Records</h2>
+          <div id="records-list"></div>
+          <p id="records-empty" class="empty-state">Log a set to start building your records.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Body Weight</h2>
+          <form id="bodyweight-form" class="bodyweight-form">
+            <input type="number" id="bodyweight-input" inputmode="decimal" min="0" step="0.1" placeholder="Weight (lb)" required>
+            <button type="submit" class="btn-primary">Log</button>
+          </form>
+          <p class="bodyweight-trend" id="bodyweight-trend"></p>
+          <div id="bodyweight-list"></div>
+          <p id="bodyweight-empty" class="empty-state">No body weight logged yet.</p>
+        </div>
+      </section>
+
+      <!-- HISTORY VIEW -->
+      <section id="view-history" class="view">
+        <div class="panel">
+          <h2>Templates</h2>
+          <div id="templates-list"></div>
+          <p id="templates-empty" class="empty-state">Save a completed workout as a template to reuse it.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Past Workouts</h2>
+          <div id="workout-history-list"></div>
+          <p id="workout-history-empty" class="empty-state">No completed workouts yet.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Backup</h2>
+          <p class="backup-note">All your data lives only in this browser. Export a backup so you don't lose it.</p>
+          <div class="backup-actions">
+            <button id="export-btn" class="btn-ghost" type="button">Export Data</button>
+            <button id="import-btn" class="btn-ghost" type="button">Import Data</button>
+          </div>
+          <input type="file" id="import-file-input" accept="application/json" class="hidden">
+        </div>
+
+        <div class="panel session-panel">
+          <div class="session-header">
+            <h2>History</h2>
+            <button id="reset-btn" class="btn-ghost" type="button">Reset Data</button>
+          </div>
+          <input type="text" id="history-search" placeholder="Search by exercise" class="history-search">
+          <div id="session-list"></div>
+          <p id="session-empty" class="empty-state">No sets logged yet. Log your first set to get started.</p>
+          <p id="session-search-empty" class="empty-state hidden">No sets match "<span id="session-search-empty-query"></span>".</p>
+        </div>
+      </section>
+
+      <!-- WORKOUT SUMMARY VIEW (shown right after ending a workout) -->
+      <section id="view-summary" class="view">
+        <div class="panel summary-panel">
+          <h2>Workout Complete</h2>
+          <div class="summary-stats">
+            <div class="summary-stat">
+              <span class="summary-stat-value" id="summary-duration">0:00</span>
+              <span class="summary-stat-label">Duration</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-stat-value" id="summary-sets">0</span>
+              <span class="summary-stat-label">Sets</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-stat-value" id="summary-volume">0</span>
+              <span class="summary-stat-label">Volume (lb)</span>
+            </div>
+          </div>
+          <div id="summary-exercise-list"></div>
+        </div>
+        <div class="summary-actions">
+          <button type="button" id="summary-share-btn" class="btn-ghost">Share</button>
+          <button type="button" id="summary-save-template-btn" class="btn-ghost">Save as Template</button>
+        </div>
+        <button type="button" id="summary-done-btn" class="btn-primary btn-log summary-done-btn">Done</button>
+      </section>
+    </main>
+
+    <div id="workout-status-bar" class="workout-status-bar hidden">
+      <div class="status-block">
+        <span class="status-label">Workout</span>
+        <span class="status-value" id="workout-timer">0:00</span>
+      </div>
+      <div class="status-block" id="rest-block">
+        <span class="status-label">Rest</span>
+        <span class="status-value" id="rest-timer">&mdash;</span>
+      </div>
+      <button type="button" id="end-workout-btn" class="end-workout-btn">End</button>
+    </div>
+
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-view="log" type="button">
+        <span class="tab-icon">&#9998;</span><span>Log</span>
+      </button>
+      <button class="tab-btn" data-view="progress" type="button">
+        <span class="tab-icon">&#128200;</span><span>Progress</span>
+      </button>
+      <button class="tab-btn" data-view="history" type="button">
+        <span class="tab-icon">&#128203;</span><span>History</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast hidden">
+    <span id="toast-message"></span>
+    <button id="toast-undo" type="button">Undo</button>
+  </div>
+
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-box">
+      <p id="confirm-message"></p>
+      <div class="modal-actions">
+        <button id="confirm-cancel" class="btn-ghost" type="button">Cancel</button>
+        <button id="confirm-ok" class="btn-danger" type="button">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-box edit-modal-box">
+      <h2>Edit Set</h2>
+      <div class="edit-modal-fields">
+        <label class="field-label" for="edit-weight-input">Weight (lb)
+          <input type="number" id="edit-weight-input" inputmode="decimal" min="0" step="0.5">
+        </label>
+        <label class="field-label" for="edit-reps-input">Reps
+          <input type="number" id="edit-reps-input" inputmode="numeric" min="1" step="1">
+        </label>
+        <label class="field-label" for="edit-note-input">Note (optional)
+          <input type="text" id="edit-note-input" maxlength="120" placeholder="e.g. felt heavy, knee twinge">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="edit-cancel" class="btn-ghost" type="button">Cancel</button>
+        <button id="edit-save" class="btn-primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="template-modal" class="modal hidden">
+    <div class="modal-box edit-modal-box">
+      <h2>Save Template</h2>
+      <div class="edit-modal-fields">
+        <label class="field-label" for="template-name-input">Template Name
+          <input type="text" id="template-name-input" maxlength="40" placeholder="e.g. Push Day">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="template-cancel" class="btn-ghost" type="button">Cancel</button>
+        <button id="template-save" class="btn-primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="plate-modal" class="modal hidden">
+    <div class="modal-box edit-modal-box">
+      <h2>Plate Calculator</h2>
+      <div class="edit-modal-fields">
+        <label class="field-label" for="plate-target-input">Target Weight (lb)
+          <input type="number" id="plate-target-input" inputmode="decimal" min="0" step="0.5">
+        </label>
+        <label class="field-label" for="plate-bar-input">Bar Weight (lb)
+          <input type="number" id="plate-bar-input" inputmode="decimal" min="0" step="0.5" value="45">
+        </label>
+      </div>
+      <div id="plate-result" class="plate-result"></div>
+      <div class="modal-actions">
+        <button id="plate-close" class="btn-primary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
