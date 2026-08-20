@@ -126,6 +126,8 @@
     syncCode: localStorage.getItem(SYNC_CODE_KEY),
     syncStatus: 'idle',
     lastSyncedAt: null,
+    workoutSteps: 0,
+    stepCounting: false,
     // Guards against pushing stale pre-pull local data over a fresher cloud copy
     // while the initial pull (on page load) is still in flight.
     syncReady: false,
@@ -324,6 +326,8 @@
   var summaryDuration = document.getElementById('summary-duration');
   var summarySets = document.getElementById('summary-sets');
   var summaryVolume = document.getElementById('summary-volume');
+  var summarySteps = document.getElementById('summary-steps');
+  var summaryStepsStat = document.getElementById('summary-steps-stat');
   var summaryExerciseList = document.getElementById('summary-exercise-list');
   var summaryDoneBtn = document.getElementById('summary-done-btn');
 
@@ -367,6 +371,14 @@
   var plateBarInput = document.getElementById('plate-bar-input');
   var plateResult = document.getElementById('plate-result');
   var plateCloseBtn = document.getElementById('plate-close');
+
+  var stepCounterBtn = document.getElementById('step-counter-btn');
+  var stepModal = document.getElementById('step-modal');
+  var stepCountDisplay = document.getElementById('step-count-display');
+  var stepStatusText = document.getElementById('step-status-text');
+  var stepToggleBtn = document.getElementById('step-toggle-btn');
+  var stepResetBtn = document.getElementById('step-reset-btn');
+  var stepCloseBtn = document.getElementById('step-close-btn');
 
   var summaryShareBtn = document.getElementById('summary-share-btn');
   var summarySaveTemplateBtn = document.getElementById('summary-save-template-btn');
@@ -629,6 +641,7 @@
     state.lastSetTime = null;
     state.restAlertFired = false;
     state.activeTemplateExercises = [];
+    state.workoutSteps = 0;
     state.currentWorkoutId = 'workout_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
     workoutStatusBar.classList.remove('hidden');
     appEl.classList.add('with-status-bar');
@@ -653,16 +666,18 @@
   // sets logged is treated as a no-op (nothing worth showing in history).
   function endWorkout() {
     var saved = null;
+    if (state.stepCounting) stopStepCounting();
     if (state.workoutActive && state.currentWorkoutId) {
       var workoutId = state.currentWorkoutId;
       var loggedInWorkout = state.sets.filter(function (s) { return s.workoutId === workoutId; });
-      if (loggedInWorkout.length > 0) {
+      if (loggedInWorkout.length > 0 || state.workoutSteps > 0) {
         saved = {
           id: workoutId,
           date: dateStrFromDate(new Date(state.workoutStartTime)),
           startedAt: state.workoutStartTime,
           endedAt: Date.now(),
           durationMs: Date.now() - state.workoutStartTime,
+          steps: state.workoutSteps,
         };
         state.workouts.push(saved);
         saveWorkouts(state.workouts);
@@ -1446,13 +1461,17 @@
       var exerciseNames = distinctExercises(loggedInWorkout);
       var totalVolume = loggedInWorkout.reduce(function (sum, s) { return sum + volumeOf(s); }, 0);
 
+      var exercisesText = exerciseNames.join(', ') || (w.steps > 0 ? 'Cardio' : 'No exercises logged');
+      var statsText = loggedInWorkout.length + (loggedInWorkout.length === 1 ? ' set' : ' sets') + ' &middot; Vol ' + Math.round(totalVolume).toLocaleString() + ' lb';
+      if (w.steps > 0) statsText += ' &middot; ' + w.steps.toLocaleString() + ' steps';
+
       var html = '<div class="workout-card">';
       html += '  <div class="workout-card-header">';
       html += '    <span class="workout-card-date">' + escapeHtml(formatDate(w.date)) + '</span>';
       html += '    <span class="workout-card-duration">' + formatElapsed(w.durationMs) + '</span>';
       html += '  </div>';
-      html += '  <div class="workout-card-exercises">' + escapeHtml(exerciseNames.join(', ') || 'No exercises logged') + '</div>';
-      html += '  <div class="workout-card-stats">' + loggedInWorkout.length + (loggedInWorkout.length === 1 ? ' set' : ' sets') + ' &middot; Vol ' + Math.round(totalVolume).toLocaleString() + ' lb</div>';
+      html += '  <div class="workout-card-exercises">' + escapeHtml(exercisesText) + '</div>';
+      html += '  <div class="workout-card-stats">' + statsText + '</div>';
       html += '</div>';
       return html;
     }).join('');
@@ -1469,6 +1488,12 @@
     summaryDuration.textContent = formatElapsed(workout.durationMs);
     summarySets.textContent = workoutSets.length;
     summaryVolume.textContent = Math.round(totalVolume).toLocaleString();
+    if (workout.steps > 0) {
+      summarySteps.textContent = workout.steps.toLocaleString();
+      summaryStepsStat.classList.remove('hidden');
+    } else {
+      summaryStepsStat.classList.add('hidden');
+    }
 
     var groups = groupByExercise(workoutSets);
     summaryExerciseList.innerHTML = groups.map(function (g) {
@@ -1647,6 +1672,105 @@
   plateTargetInput.addEventListener('input', renderPlateResult);
   plateBarInput.addEventListener('input', renderPlateResult);
   plateCloseBtn.addEventListener('click', function () { plateModal.classList.add('hidden'); });
+
+  // ---------- step counter ----------
+  // Simple peak-detection pedometer: tracks the magnitude of the device's
+  // acceleration (including gravity), smooths it, and counts a step each time
+  // the signal rises well above its recent baseline then falls back — the
+  // pattern a walking/running gait produces. Only runs while this modal is
+  // open and the screen is on; there's no way for a web page to count steps
+  // in the background or system-wide.
+
+  var STEP_THRESHOLD = 1.2;
+  var STEP_MIN_INTERVAL_MS = 300;
+  var stepSmoothedMag = 9.8;
+  var stepRising = false;
+  var stepLastTime = 0;
+  var motionListenerAttached = false;
+
+  function updateStepDisplay() {
+    stepCountDisplay.textContent = state.workoutSteps;
+  }
+
+  function handleDeviceMotion(e) {
+    var acc = e.accelerationIncludingGravity;
+    if (!acc || acc.x === null || acc.x === undefined) return;
+    var mag = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+    stepSmoothedMag = stepSmoothedMag * 0.9 + mag * 0.1;
+    var delta = mag - stepSmoothedMag;
+
+    if (!stepRising && delta > STEP_THRESHOLD) {
+      stepRising = true;
+    } else if (stepRising && delta < 0) {
+      stepRising = false;
+      var now = Date.now();
+      if (now - stepLastTime > STEP_MIN_INTERVAL_MS) {
+        stepLastTime = now;
+        state.workoutSteps++;
+        updateStepDisplay();
+      }
+    }
+  }
+
+  function startStepCounting() {
+    if (typeof DeviceMotionEvent === 'undefined') {
+      stepStatusText.textContent = 'Motion sensor not available on this device/browser.';
+      return;
+    }
+
+    function attachAndStart() {
+      if (!motionListenerAttached) {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+        motionListenerAttached = true;
+      }
+      state.stepCounting = true;
+      stepToggleBtn.textContent = 'Stop';
+      stepStatusText.textContent = 'Counting…';
+    }
+
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(function (result) {
+        if (result === 'granted') attachAndStart();
+        else stepStatusText.textContent = 'Motion access denied. Enable it in Settings > Safari > Motion & Orientation Access.';
+      }).catch(function () {
+        stepStatusText.textContent = 'Could not request motion access.';
+      });
+    } else {
+      attachAndStart();
+    }
+  }
+
+  function stopStepCounting() {
+    if (motionListenerAttached) {
+      window.removeEventListener('devicemotion', handleDeviceMotion);
+      motionListenerAttached = false;
+    }
+    state.stepCounting = false;
+    stepToggleBtn.textContent = 'Start';
+    stepStatusText.textContent = 'Paused at ' + state.workoutSteps + ' steps.';
+  }
+
+  stepCounterBtn.addEventListener('click', function () {
+    updateStepDisplay();
+    stepStatusText.textContent = state.stepCounting ? 'Counting…' : (state.workoutSteps > 0 ? 'Paused at ' + state.workoutSteps + ' steps.' : 'Not started');
+    stepToggleBtn.textContent = state.stepCounting ? 'Stop' : 'Start';
+    stepModal.classList.remove('hidden');
+  });
+
+  stepToggleBtn.addEventListener('click', function () {
+    if (state.stepCounting) stopStepCounting();
+    else startStepCounting();
+  });
+
+  stepResetBtn.addEventListener('click', function () {
+    state.workoutSteps = 0;
+    updateStepDisplay();
+    stepStatusText.textContent = state.stepCounting ? 'Counting…' : 'Not started';
+  });
+
+  stepCloseBtn.addEventListener('click', function () {
+    stepModal.classList.add('hidden');
+  });
 
   // ---------- workout templates ----------
 
