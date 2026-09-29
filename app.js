@@ -1677,10 +1677,14 @@
 
     workoutHistoryList.innerHTML = sorted.map(function (w) {
       var loggedInWorkout = state.sets.filter(function (s) { return s.workoutId === w.id; });
-      var exerciseNames = distinctExercises(loggedInWorkout);
+      var groups = groupByExercise(loggedInWorkout);
       var totalVolume = loggedInWorkout.reduce(function (sum, s) { return sum + volumeOf(s); }, 0);
 
-      var exercisesText = exerciseNames.join(', ') || 'No exercises logged';
+      var progressionHtml = groups.length ? groups.map(function (g) {
+        var seq = g.entries.map(function (e) { return e.weight + '&times;' + e.reps; }).join(' &rarr; ');
+        return '<div class="workout-card-progression"><span class="workout-card-progression-name">' + escapeHtml(g.exercise) + ':</span> ' + seq + '</div>';
+      }).join('') : '<div class="workout-card-progression">No exercises logged</div>';
+
       var statsText = loggedInWorkout.length + (loggedInWorkout.length === 1 ? ' set' : ' sets') + ' &middot; Vol ' + Math.round(totalVolume).toLocaleString() + ' lb';
 
       var html = '<div class="workout-card">';
@@ -1688,11 +1692,40 @@
       html += '    <span class="workout-card-date">' + escapeHtml(formatDate(w.date)) + '</span>';
       html += '    <span class="workout-card-duration">' + formatElapsed(w.durationMs) + '</span>';
       html += '  </div>';
-      html += '  <div class="workout-card-exercises">' + escapeHtml(exercisesText) + '</div>';
+      html += progressionHtml;
       html += '  <div class="workout-card-stats">' + statsText + '</div>';
+      html += '  <button type="button" class="btn-ghost workout-card-continue-btn" data-workout-id="' + escapeHtml(w.id) + '">Continue Workout</button>';
       html += '</div>';
       return html;
     }).join('');
+
+    bindContinueWorkoutButtons();
+  }
+
+  function bindContinueWorkoutButtons() {
+    Array.prototype.forEach.call(workoutHistoryList.querySelectorAll('.workout-card-continue-btn'), function (btn) {
+      btn.addEventListener('click', function () {
+        continueWorkout(btn.getAttribute('data-workout-id'));
+      });
+    });
+  }
+
+  // Reopens a finished workout so more sets can be logged into the same
+  // session instead of starting a fresh one — used from the Past Workouts
+  // list. Keeps the original start time so the resulting duration reflects
+  // the full span, including any gap before it was continued.
+  function continueWorkout(workoutId) {
+    if (state.workoutActive) {
+      showToast('End your current workout before continuing another.');
+      return;
+    }
+    var w = state.workouts.find(function (x) { return x.id === workoutId; });
+    if (!w) return;
+    state.workouts = state.workouts.filter(function (x) { return x.id !== workoutId; });
+    saveWorkouts(state.workouts);
+    startWorkoutTimers({ workoutId: w.id, startedAt: w.startedAt, lastSetTime: null });
+    render();
+    switchView('log');
   }
 
   // ---------- render: post-workout summary ----------
