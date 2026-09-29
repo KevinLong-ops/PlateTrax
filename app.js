@@ -3,6 +3,7 @@
 
   var STORAGE_KEY = 'ironlog.sets.v1';
   var WORKOUTS_STORAGE_KEY = 'ironlog.workouts.v1';
+  var ACTIVE_WORKOUT_KEY = 'ironlog.activeWorkout.v1';
   var REST_TARGET_KEY = 'ironlog.restTarget.v1';
   var REST_TARGET_PRESETS = [null, 60, 90, 120, 150, 180];
   var TEMPLATES_KEY = 'ironlog.templates.v1';
@@ -160,6 +161,35 @@
 
   function saveWorkouts(workouts) {
     localStorage.setItem(WORKOUTS_STORAGE_KEY, JSON.stringify(workouts));
+  }
+
+  // Lets an in-progress workout survive a page reload (iOS suspends/kills
+  // backgrounded PWAs and reloads them fresh) by persisting just enough to
+  // resume the same session: which workout, when it started, and when the
+  // last set was logged (for the rest timer).
+  function saveActiveWorkout() {
+    if (!state.workoutActive || !state.currentWorkoutId) return;
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify({
+      workoutId: state.currentWorkoutId,
+      startedAt: state.workoutStartTime,
+      lastSetTime: state.lastSetTime,
+    }));
+  }
+
+  function loadActiveWorkout() {
+    try {
+      var raw = localStorage.getItem(ACTIVE_WORKOUT_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.workoutId || !parsed.startedAt) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearActiveWorkout() {
+    localStorage.removeItem(ACTIVE_WORKOUT_KEY);
   }
 
   function loadRestTarget() {
@@ -761,13 +791,13 @@
     if (document.visibilityState === 'visible' && state.workoutActive) requestWakeLock();
   });
 
-  function startWorkoutTimers() {
+  function startWorkoutTimers(resume) {
     state.workoutActive = true;
-    state.workoutStartTime = Date.now();
-    state.lastSetTime = null;
+    state.workoutStartTime = resume ? resume.startedAt : Date.now();
+    state.lastSetTime = resume ? (resume.lastSetTime || null) : null;
     state.restAlertFired = false;
     state.activeTemplateExercises = [];
-    state.currentWorkoutId = 'workout_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    state.currentWorkoutId = resume ? resume.workoutId : ('workout_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8));
     workoutStatusBar.classList.remove('hidden');
     appEl.classList.add('with-status-bar');
     restBlock.classList.remove('rest-alert');
@@ -776,6 +806,7 @@
     timerIntervalId = setInterval(updateTimerDisplay, 1000);
     updateTimerDisplay();
     requestWakeLock();
+    saveActiveWorkout();
   }
 
   function stopWorkoutTimers() {
@@ -808,6 +839,7 @@
     }
     state.currentWorkoutId = null;
     stopWorkoutTimers();
+    clearActiveWorkout();
     render();
     return saved;
   }
@@ -817,6 +849,7 @@
     state.restAlertFired = false;
     restBlock.classList.remove('rest-alert');
     if (state.workoutActive) updateTimerDisplay();
+    saveActiveWorkout();
   }
 
   function relativeDayLabel(dateStr) {
@@ -2183,6 +2216,14 @@
   applyTheme(localStorage.getItem(THEME_KEY) || 'red');
   restBlock.querySelector('.status-label').textContent = restLabelText();
   render();
-  switchView('menu');
+
+  var resumedWorkout = loadActiveWorkout();
+  if (resumedWorkout) {
+    startWorkoutTimers(resumedWorkout);
+    switchView('log');
+  } else {
+    switchView('menu');
+  }
+
   initSyncOnLoad();
 })();
